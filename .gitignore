@@ -1,0 +1,104 @@
+# ==========================
+# Build results
+# ==========================
+bin/
+obj/
+out/
+artifacts/
+
+# ==========================
+# Visual Studio
+# ==========================
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vcxproj.user
+*.pdb
+*.cache
+*.ilk
+*.log
+*.tlog
+*.lastbuildstate
+
+# ==========================
+# Rider / JetBrains
+# ==========================
+.idea/
+*.sln.iml
+
+# ==========================
+# NuGet
+# ==========================
+*.nupkg
+*.snupkg
+packages/
+*.nuget.props
+*.nuget.targets
+
+# ==========================
+# Dotnet Core / SDK
+# ==========================
+project.lock.json
+project.fragment.lock.json
+global.json
+*.dotCover
+
+# ==========================
+# ASP.NET Core / Scaffolding
+# ==========================
+ScaffoldingReadMe.txt
+wwwroot/lib/
+
+# ==========================
+# Entity Framework
+# ==========================
+*.db
+*.mdf
+*.ldf
+*.sqlite
+*.sqlite3
+
+# ==========================
+# User-specific / local files
+# ==========================
+*.vsconfig
+*.local
+*.env
+*.env.local
+launchSettings.json
+secrets.json
+
+# ==========================
+# StyleCop / Code Analysis
+# ==========================
+StyleCopReport.xml
+*.ruleset
+
+# ==========================
+# OS files
+# ==========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==========================
+# Logs & temporary files
+# ==========================
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# ==========================
+# Database Files
+# ==========================
+/Data
+
+# ==========================
+# Ressource Files
+# ==========================
+*.exe
+/Web/appsettings.development.json
