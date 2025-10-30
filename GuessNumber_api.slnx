@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="Application/Application.csproj" />
+  <Project Path="Domain/Domain.csproj" />
+  <Project Path="Infrastructure/Infrastructure.csproj" />
+  <Project Path="IntegrationTests/IntegrationTests.csproj" Id="b8bebe05-ccfc-4e65-b39c-158bb5cb95c9" />
+  <Project Path="MigrationRunner/MigrationRunner.csproj" Id="9a77b0f5-c32b-4c4e-bb64-881a9c718ce8" />
+  <Project Path="Shared/Shared.csproj" />
+  <Project Path="UnitTests/UnitTests.csproj" Id="624a7060-fc4c-4fbf-806d-d34725723aa6" />
+  <Project Path="Web/Web.csproj" />
+</Solution>
