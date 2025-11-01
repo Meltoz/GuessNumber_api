@@ -586,6 +586,277 @@ namespace IntegrationTests.Web
 
         #endregion
 
+        #region UpdateCommunication Tests
+
+        [Fact]
+        public async Task UpdateCommunication_WithValidData_ShouldReturnOk()
+        {
+            // Arrange
+            var existingCommunication = new CommunicationEntity
+            {
+                Id = Guid.NewGuid(),
+                Content = "Original Content",
+                Start = DateTime.UtcNow,
+                End = DateTime.UtcNow.AddDays(5)
+            };
+            _context.Communications.Add(existingCommunication);
+            await _context.SaveChangesAsync();
+
+            var updateModel = new CommunicationAdminVM
+            {
+                Id = existingCommunication.Id,
+                Content = "Updated Content",
+                StartDate = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-ddTHH:mm"),
+                EndDate = DateTime.UtcNow.AddDays(6).ToString("yyyy-MM-ddTHH:mm")
+            };
+            var content = new StringContent(
+                JsonSerializer.Serialize(updateModel),
+                Encoding.UTF8,
+                "application/json"
+            );
+
+            // Act
+            var response = await _client.PatchAsync("/api/communicationAdmin/update", content);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = JsonSerializer.Deserialize<CommunicationAdminVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(result);
+            Assert.Equal(updateModel.Content, result.Content);
+            Assert.Equal(existingCommunication.Id, result.Id);
+        }
+
+        [Fact]
+        public async Task UpdateCommunication_WithInvalidModel_ShouldReturnBadRequest()
+        {
+            // Arrange
+            var updateModel = new CommunicationAdminVM
+            {
+                Id = Guid.NewGuid(),
+                // Missing required fields
+            };
+            var content = new StringContent(
+                JsonSerializer.Serialize(updateModel),
+                Encoding.UTF8,
+                "application/json"
+            );
+
+            // Act
+            var response = await _client.PatchAsync("/api/communicationAdmin/update", content);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task UpdateCommunication_WithNonExistentId_ShouldReturnError()
+        {
+            // Arrange
+            var updateModel = new CommunicationAdminVM
+            {
+                Id = Guid.NewGuid(),
+                Content = "Test Content",
+                StartDate = DateTime.UtcNow.ToString("o"),
+                EndDate = DateTime.UtcNow.AddDays(1).ToString("o")
+            };
+            var content = new StringContent(
+                JsonSerializer.Serialize(updateModel),
+                Encoding.UTF8,
+                "application/json"
+            );
+
+            // Act
+            var response = await _client.PatchAsync("/api/communicationAdmin/update", content);
+
+            // Assert
+            Assert.False(response.IsSuccessStatusCode);
+        }
+
+        [Fact]
+        public async Task UpdateCommunication_WithEmptyId_ShouldReturnError()
+        {
+            // Arrange
+            var updateModel = new CommunicationAdminVM
+            {
+                Id = Guid.Empty,
+                Content = "Test Content",
+                StartDate = DateTime.UtcNow.ToString("o"),
+                EndDate = DateTime.UtcNow.AddDays(1).ToString("o")
+            };
+            var content = new StringContent(
+                JsonSerializer.Serialize(updateModel),
+                Encoding.UTF8,
+                "application/json"
+            );
+
+            // Act
+            var response = await _client.PatchAsync("/api/communicationAdmin/update", content);
+
+            // Assert
+            Assert.False(response.IsSuccessStatusCode);
+        }
+
+        [Fact]
+        public async Task UpdateCommunication_WithOnlyContentChange_ShouldReturnOk()
+        {
+            // Arrange
+            var startDate = DateTime.UtcNow;
+            var endDate = DateTime.UtcNow.AddDays(5);
+            var existingCommunication = new CommunicationEntity
+            {
+                Id = Guid.NewGuid(),
+                Content = "Original Content",
+                Start = startDate,
+                End = endDate
+            };
+            _context.Communications.Add(existingCommunication);
+            await _context.SaveChangesAsync();
+
+            var updateModel = new CommunicationAdminVM
+            {
+                Id = existingCommunication.Id,
+                Content = "Updated Content Only",
+                StartDate = startDate.ToString("yyyy-MM-ddTHH:mm"),
+                EndDate = endDate.ToString("yyyy-MM-ddTHH:mm")
+            };
+            var content = new StringContent(
+                JsonSerializer.Serialize(updateModel),
+                Encoding.UTF8,
+                "application/json"
+            );
+
+            // Act
+            var response = await _client.PatchAsync("/api/communicationAdmin/update", content);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = JsonSerializer.Deserialize<CommunicationAdminVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(result);
+            Assert.Equal("Updated Content Only", result.Content);
+        }
+
+        [Fact]
+        public async Task UpdateCommunication_WithOnlyDatesChange_ShouldReturnOk()
+        {
+            // Arrange
+            var existingCommunication = new CommunicationEntity
+            {
+                Id = Guid.NewGuid(),
+                Content = "Same Content",
+                Start = DateTime.UtcNow,
+                End = DateTime.UtcNow.AddDays(5)
+            };
+            _context.Communications.Add(existingCommunication);
+            await _context.SaveChangesAsync();
+
+            var newStartDate = DateTime.UtcNow.AddDays(2);
+            var newEndDate = DateTime.UtcNow.AddDays(7);
+            var updateModel = new CommunicationAdminVM
+            {
+                Id = existingCommunication.Id,
+                Content = "Same Content",
+                StartDate = newStartDate.ToString("yyyy-MM-ddTHH:mm"),
+                EndDate = newEndDate.ToString("yyyy-MM-ddTHH:mm")
+            };
+            var content = new StringContent(
+                JsonSerializer.Serialize(updateModel),
+                Encoding.UTF8,
+                "application/json"
+            );
+
+            // Act
+            var response = await _client.PatchAsync("/api/communicationAdmin/update", content);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = JsonSerializer.Deserialize<CommunicationAdminVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(result);
+            Assert.Equal("Same Content", result.Content);
+        }
+
+        #endregion
+
+        #region DeleteCommunication Tests
+
+        [Fact]
+        public async Task DeleteCommunication_WithExistingId_ShouldReturnOk()
+        {
+            // Arrange
+            var communication = new CommunicationEntity
+            {
+                Id = Guid.NewGuid(),
+                Content = "To Delete",
+                Start = DateTime.UtcNow,
+                End = DateTime.UtcNow.AddDays(5)
+            };
+            _context.Communications.Add(communication);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.DeleteAsync($"/api/communicationAdmin/delete?idCommunication={communication.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+
+            // Verify deletion
+            var deletedCommunication = await _context.Communications.FindAsync(communication.Id);
+            Assert.Null(deletedCommunication);
+        }
+
+        [Fact]
+        public async Task DeleteCommunication_WithNonExistentId_ShouldReturnError()
+        {
+            // Arrange
+            var nonExistentId = Guid.NewGuid();
+
+            // Act
+            var response = await _client.DeleteAsync($"/api/communicationAdmin/delete?idCommunication={nonExistentId}");
+
+            // Assert
+            Assert.False(response.IsSuccessStatusCode);
+        }
+
+        [Fact]
+        public async Task DeleteCommunication_WithInvalidGuid_ShouldReturnBadRequest()
+        {
+            // Act
+            var response = await _client.DeleteAsync("/api/communicationAdmin/delete?idCommunication=invalid-guid");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task DeleteCommunication_WithEmptyGuid_ShouldReturnError()
+        {
+            // Act
+            var response = await _client.DeleteAsync($"/api/communicationAdmin/delete?idCommunication={Guid.Empty}");
+
+            // Assert
+            Assert.False(response.IsSuccessStatusCode);
+        }
+
+        [Fact]
+        public async Task DeleteCommunication_WithMissingParameter_ShouldReturnBadRequest()
+        {
+            // Act
+            var response = await _client.DeleteAsync("/api/communicationAdmin/delete");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        }
+
+        #endregion
+
         #endregion
 
     }

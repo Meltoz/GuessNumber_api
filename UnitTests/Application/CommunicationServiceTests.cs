@@ -1,4 +1,5 @@
-﻿using Application.Interfaces.Repository;
+﻿using Application.Exceptions;
+using Application.Interfaces.Repository;
 using Application.Services;
 using Domain;
 using Moq;
@@ -689,7 +690,6 @@ namespace UnitTests.Application
             await _service.Search(100, 50, sort, "");
 
             // Assert
-            // skip should be pageIndex * pageSize = 100 * 50 = 5000
             _communicationRepositoryMock.Verify(r => r.Search(5000, 50, sort, ""), Times.Once);
         }
 
@@ -787,6 +787,199 @@ namespace UnitTests.Application
             _communicationRepositoryMock.Verify(r => r.Search(0, 10, sort1, "search1"), Times.Once);
             _communicationRepositoryMock.Verify(r => r.Search(20, 20, sort2, "search2"), Times.Once);
             _communicationRepositoryMock.Verify(r => r.Search(60, 30, sort1, ""), Times.Once);
+        }
+
+        #endregion
+
+        #region Update Tests - Basic Functionality
+
+        [Fact]
+        public async Task UpdateAsync_ShouldUpdateCommunication_WhenAllPropertiesChange()
+        {
+            // Arrange
+            var communicationId = Guid.NewGuid();
+            var originalComm = new Communication(communicationId, "Original Content", DateTime.Now, DateTime.Now.AddDays(5));
+            var updatedComm = new Communication(communicationId, "Updated Content", DateTime.Now.AddDays(1), DateTime.Now.AddDays(6));
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetByIdAsync(communicationId))
+                .ReturnsAsync(originalComm);
+            _communicationRepositoryMock
+                .Setup(r => r.UpdateAsync(It.IsAny<Communication>()))
+                .ReturnsAsync((Communication c) => c);
+
+            // Act
+            var result = await _service.UpdateAsync(updatedComm);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(updatedComm.Content, result.Content);
+            Assert.Equal(updatedComm.StartDate, result.StartDate);
+            Assert.Equal(updatedComm.EndDate, result.EndDate);
+            _communicationRepositoryMock.Verify(r => r.GetByIdAsync(communicationId), Times.Once);
+            _communicationRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Communication>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ShouldUpdateContent_WhenOnlyContentChanges()
+        {
+            // Arrange
+            var communicationId = Guid.NewGuid();
+            var startDate = DateTime.Now;
+            var endDate = DateTime.Now.AddDays(5);
+            var originalComm = new Communication(communicationId, "Original Content", startDate, endDate);
+            var updatedComm = new Communication(communicationId, "Updated Content", startDate, endDate);
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetByIdAsync(communicationId))
+                .ReturnsAsync(originalComm);
+            _communicationRepositoryMock
+                .Setup(r => r.UpdateAsync(It.IsAny<Communication>()))
+                .ReturnsAsync((Communication c) => c);
+
+            // Act
+            var result = await _service.UpdateAsync(updatedComm);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Updated Content", result.Content);
+            _communicationRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Communication>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ShouldUpdateDates_WhenOnlyDatesChange()
+        {
+            // Arrange
+            var communicationId = Guid.NewGuid();
+            var originalComm = new Communication(communicationId, "Content", DateTime.Now, DateTime.Now.AddDays(5));
+            var newStartDate = DateTime.Now.AddDays(1);
+            var newEndDate = DateTime.Now.AddDays(6);
+            var updatedComm = new Communication(communicationId, "Content", newStartDate, newEndDate);
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetByIdAsync(communicationId))
+                .ReturnsAsync(originalComm);
+            _communicationRepositoryMock
+                .Setup(r => r.UpdateAsync(It.IsAny<Communication>()))
+                .ReturnsAsync((Communication c) => c);
+
+            // Act
+            var result = await _service.UpdateAsync(updatedComm);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(newStartDate, result.StartDate);
+            Assert.Equal(newEndDate, result.EndDate);
+            _communicationRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Communication>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ShouldThrowArgumentNullException_WhenCommunicationIsNull()
+        {
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _service.UpdateAsync(null));
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ShouldThrowArgumentNullException_WhenCommunicationIdIsEmpty()
+        {
+            // Arrange
+            var communication = new Communication(Guid.Empty, "Content", DateTime.Now, DateTime.Now.AddDays(1));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _service.UpdateAsync(communication));
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ShouldThrowEntityNotFoundException_WhenCommunicationNotFound()
+        {
+            // Arrange
+            var communicationId = Guid.NewGuid();
+            var communication = new Communication(communicationId, "Content", DateTime.Now, DateTime.Now.AddDays(1));
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetByIdAsync(communicationId))
+                .ReturnsAsync((Communication)null);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<EntityNotFoundException>(() => _service.UpdateAsync(communication));
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ShouldNotUpdate_WhenNoPropertiesChange()
+        {
+            // Arrange
+            var communicationId = Guid.NewGuid();
+            var startDate = DateTime.Now;
+            var endDate = DateTime.Now.AddDays(5);
+            var originalComm = new Communication(communicationId, "Same Content", startDate, endDate);
+            var updatedComm = new Communication(communicationId, "Same Content", startDate, endDate);
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetByIdAsync(communicationId))
+                .ReturnsAsync(originalComm);
+            _communicationRepositoryMock
+                .Setup(r => r.UpdateAsync(It.IsAny<Communication>()))
+                .ReturnsAsync((Communication c) => c);
+
+            // Act
+            var result = await _service.UpdateAsync(updatedComm);
+
+            // Assert
+            Assert.NotNull(result);
+            _communicationRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Communication>()), Times.Once);
+        }
+
+        #endregion
+
+        #region Delete Tests - Basic Functionality
+
+        [Fact]
+        public async Task DeleteAsync_ShouldDeleteCommunication_WhenExists()
+        {
+            // Arrange
+            var communicationId = Guid.NewGuid();
+            var communication = new Communication(communicationId, "Content", DateTime.Now, DateTime.Now.AddDays(1));
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetByIdAsync(communicationId))
+                .ReturnsAsync(communication);
+
+            // Act
+            await _service.DeleteAsync(communicationId);
+
+            // Assert
+            _communicationRepositoryMock.Verify(r => r.GetByIdAsync(communicationId), Times.Once);
+            _communicationRepositoryMock.Verify(r => r.Delete(communicationId), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteAsync_ShouldThrowEntityNotFoundException_WhenCommunicationNotFound()
+        {
+            // Arrange
+            var communicationId = Guid.NewGuid();
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetByIdAsync(communicationId))
+                .ReturnsAsync((Communication)null);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<EntityNotFoundException>(() => _service.DeleteAsync(communicationId));
+            _communicationRepositoryMock.Verify(r => r.Delete(It.IsAny<Guid>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task DeleteAsync_ShouldThrow_WhenRepositoryThrows()
+        {
+            // Arrange
+            var communicationId = Guid.NewGuid();
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetByIdAsync(communicationId))
+                .ThrowsAsync(new Exception("Repository failed"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => _service.DeleteAsync(communicationId));
         }
 
         #endregion

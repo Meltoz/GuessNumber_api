@@ -95,28 +95,44 @@ namespace Web.Controllers.Admins
 
         [HttpPost]
         [Route("communicationAdmin/add")]
-        public async Task<IActionResult> AddCommunication([FromBody]CommunicationAdminVM communicationToAdd)
+        public async Task<IActionResult> AddCommunication([FromBody]CommunicationAdminVM model)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            return Ok();
+            if (!TryParseDate(model.StartDate, out var startDate))
+                return BadRequest("Invalid start date format.");
+
+            DateTime? endDate = null;
+            if (!string.IsNullOrWhiteSpace(model.EndDate))
+            {
+                if (!TryParseDate(model.EndDate, out var parsedEndDate))
+                    return BadRequest("Invalid end date format.");
+                endDate = parsedEndDate;
+            }
+
+            var communication = await _communicationService.CreateNew(model.Content, startDate, endDate);
+
+            return Ok(_mapper.Map<CommunicationAdminVM>(communication));
         }
 
         [HttpPatch]
         [Route("communicationAdmin/update")]
-        public async Task<IActionResult> UpdateCommunication([FromBody]CommunicationAdminVM communicatioToUpdate)
+        public async Task<IActionResult> UpdateCommunication([FromBody]CommunicationAdminVM model)
         {
             if(!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            return Ok();
+            var communication = await _communicationService.UpdateAsync(_mapper.Map<Communication>(model));
+
+            return Ok(_mapper.Map<CommunicationAdminVM>(communication));
         }
 
         [HttpDelete]
         [Route("communicationAdmin/delete")]
         public async Task<IActionResult> DeleteCommunication(Guid idCommunication)
         {
+            await _communicationService.DeleteAsync(idCommunication);
 
             return Ok();
         }
