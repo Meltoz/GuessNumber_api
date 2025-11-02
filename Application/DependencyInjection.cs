@@ -9,6 +9,8 @@ namespace Application
         {
             services.AddScoped<ActualityService>();
             services.AddScoped<CommunicationService>();
+            services.AddScoped<ReportService>();
+
 
             return services;
         }

@@ -13,10 +13,11 @@ namespace Web.Controllers.Admins
 {
     [Route("api")]
     [ApiController]
-    public class AdminParametersController(ActualityService acts, CommunicationService cs, IMapper m) : ControllerBase
+    public class AdminParametersController(ActualityService acts, CommunicationService cs, ReportService rs, IMapper m) : ControllerBase
     {
         private readonly ActualityService _actualityService = acts;
         private readonly CommunicationService _communicationService = cs;
+        private readonly ReportService _reportService = rs;
         private readonly IMapper _mapper = m;
 
         #region Actuality 
@@ -141,6 +142,25 @@ namespace Web.Controllers.Admins
 
             return Ok();
         }
+        #endregion
+
+        #region report
+
+        [HttpGet]
+        [Route("reportAdmin/search")]
+        public async Task<IActionResult> GetReport(int pageIndex, int pageSize, string? search)
+        {
+            if (pageIndex < 0 || pageSize < 1)
+                return BadRequest();
+
+            var reports = await _reportService.GetAll(pageIndex, pageSize, search);
+
+            Response.AddTotalCountHeader(reports.TotalCount);
+
+            return Ok(_mapper.Map<IEnumerable<ReportVM>>(reports.Data));
+
+        }
+
         #endregion
     }
 }

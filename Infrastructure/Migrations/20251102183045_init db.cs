@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class init_db : Migration
+    public partial class initdb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -43,6 +43,23 @@ namespace Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_Communications", x => x.Id);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "Reports",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Explanation = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Mail = table.Column<string>(type: "text", nullable: true),
+                    Type = table.Column<int>(type: "integer", nullable: false),
+                    Context = table.Column<int>(type: "integer", nullable: false),
+                    Created = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Updated = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Reports", x => x.Id);
+                });
         }
 
         /// <inheritdoc />
@@ -53,6 +70,9 @@ namespace Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Communications");
+
+            migrationBuilder.DropTable(
+                name: "Reports");
         }
     }
 }

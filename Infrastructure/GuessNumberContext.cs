@@ -9,6 +9,8 @@ namespace Infrastructure
 
         public DbSet<CommunicationEntity> Communications { get; set; }
 
+        public DbSet<ReportEntity> Reports { get; set; }
+
 
         public GuessNumberContext()
         {
@@ -42,6 +44,7 @@ namespace Infrastructure
                     }
                 }
             }
+
         }
     }
 }

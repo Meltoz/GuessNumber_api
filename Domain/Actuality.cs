@@ -12,7 +12,7 @@
 
         public DateTime? EndPublish { get; private set; }
 
-        public Actuality() { }
+        private Actuality() { }
 
         public Actuality(string title, string content, DateTime? start, DateTime? end)
         {
