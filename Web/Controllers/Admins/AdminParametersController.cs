@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Shared;
 using Shared.Enums.Sorting;
 using Web.Constants;
+using Web.Converters;
 using Web.Extensions;
 using Web.ViewModels;
 
@@ -39,18 +40,20 @@ namespace Web.Controllers.Admins
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (!TryParseDate(model.StartDate, out var startDate))
+            var startDate = DateConverter.ParseDate(model.StartDate);
+            if(startDate  is null)
                 return BadRequest("Invalid start date format.");
 
             DateTime? endDate = null;
             if (!string.IsNullOrWhiteSpace(model.EndDate))
             {
-                if (!TryParseDate(model.EndDate, out var parsedEndDate))
+                var parsedEndDate = DateConverter.ParseDate(model.EndDate);
+                if (parsedEndDate is null)
                     return BadRequest("Invalid end date format.");
                 endDate = parsedEndDate;
             }
 
-            var inserted =  await _actualityService.CreateNew(model.Title, model.Content, startDate, endDate);
+            var inserted =  await _actualityService.CreateNew(model.Title, model.Content, startDate.Value, endDate);
 
             return Ok(_mapper.Map<ActualityAdminVM>(inserted));
         }
@@ -100,18 +103,20 @@ namespace Web.Controllers.Admins
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (!TryParseDate(model.StartDate, out var startDate))
+            var startDate = DateConverter.ParseDate(model.StartDate);
+            if (startDate is null)
                 return BadRequest("Invalid start date format.");
 
             DateTime? endDate = null;
             if (!string.IsNullOrWhiteSpace(model.EndDate))
             {
-                if (!TryParseDate(model.EndDate, out var parsedEndDate))
+                var parsedEndDate = DateConverter.ParseDate(model.EndDate);
+                if (parsedEndDate is null)
                     return BadRequest("Invalid end date format.");
                 endDate = parsedEndDate;
             }
 
-            var communication = await _communicationService.CreateNew(model.Content, startDate, endDate);
+            var communication = await _communicationService.CreateNew(model.Content, startDate.Value, endDate);
 
             return Ok(_mapper.Map<CommunicationAdminVM>(communication));
         }
@@ -137,16 +142,5 @@ namespace Web.Controllers.Admins
             return Ok();
         }
         #endregion
-
-        private static bool TryParseDate(string date, out DateTime parsedDate)
-        {
-            return DateTime.TryParseExact(
-                date,
-                ApiConstants.DefaultFormatDate,
-                null,
-                System.Globalization.DateTimeStyles.None,
-                out parsedDate
-            );
-        }
     }
 }

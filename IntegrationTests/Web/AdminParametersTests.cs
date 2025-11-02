@@ -131,7 +131,7 @@ namespace IntegrationTests.Web
             {
                 Title = "New Actuality",
                 Content = "New Content",
-                StartDate = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm")
+                StartDate = DateTime.UtcNow.ToString("o")
             };
             var content = new StringContent(
                 JsonSerializer.Serialize(model),
@@ -164,8 +164,8 @@ namespace IntegrationTests.Web
             {
                 Title = "Temporary Actuality",
                 Content = "Temporary Content",
-                StartDate = startDate.ToString("yyyy-MM-ddTHH:mm"),
-                EndDate = endDate.ToString("yyyy-MM-ddTHH:mm")
+                StartDate = startDate.ToString("o"),
+                EndDate = endDate.ToString("o")
             };
             var content = new StringContent(
                 JsonSerializer.Serialize(model),
@@ -606,8 +606,8 @@ namespace IntegrationTests.Web
             {
                 Id = existingCommunication.Id,
                 Content = "Updated Content",
-                StartDate = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-ddTHH:mm"),
-                EndDate = DateTime.UtcNow.AddDays(6).ToString("yyyy-MM-ddTHH:mm")
+                StartDate = DateTime.UtcNow.AddDays(1).ToString("o"),
+                EndDate = DateTime.UtcNow.AddDays(6).ToString("o")
             };
             var content = new StringContent(
                 JsonSerializer.Serialize(updateModel),
@@ -719,8 +719,8 @@ namespace IntegrationTests.Web
             {
                 Id = existingCommunication.Id,
                 Content = "Updated Content Only",
-                StartDate = startDate.ToString("yyyy-MM-ddTHH:mm"),
-                EndDate = endDate.ToString("yyyy-MM-ddTHH:mm")
+                StartDate = startDate.ToString("o"),
+                EndDate = endDate.ToString("o")
             };
             var content = new StringContent(
                 JsonSerializer.Serialize(updateModel),
@@ -761,8 +761,8 @@ namespace IntegrationTests.Web
             {
                 Id = existingCommunication.Id,
                 Content = "Same Content",
-                StartDate = newStartDate.ToString("yyyy-MM-ddTHH:mm"),
-                EndDate = newEndDate.ToString("yyyy-MM-ddTHH:mm")
+                StartDate = newStartDate.ToString("o"),
+                EndDate = newEndDate.ToString("o")
             };
             var content = new StringContent(
                 JsonSerializer.Serialize(updateModel),

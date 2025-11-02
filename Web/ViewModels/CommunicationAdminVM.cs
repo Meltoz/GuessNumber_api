@@ -13,6 +13,11 @@ namespace Web.ViewModels
         [Required]
         public string Content { get; set; } = string.Empty;
 
-        public bool? Active { get; set; }
+        public bool Active =>
+                !string.IsNullOrEmpty(StartDate) &&
+                DateTime.TryParse(StartDate, out var start) &&
+                DateTime.UtcNow >= start &&
+                (string.IsNullOrEmpty(EndDate) ||
+                 (DateTime.TryParse(EndDate, out var end) && DateTime.UtcNow <= end));
     }
 }

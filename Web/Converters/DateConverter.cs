@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using System.Globalization;
 using Web.Constants;
 
 namespace Web.Converters
@@ -7,13 +8,18 @@ namespace Web.Converters
     {
         public DateTime? Convert(string source, DateTime? destination, ResolutionContext context)
         {
-            if (string.IsNullOrEmpty(source))
+            return ParseDate(source);
+        }
+
+        public static DateTime? ParseDate(string source)
+        {
+            if (string.IsNullOrWhiteSpace(source))
                 return null;
 
-            if (DateTime.TryParseExact(source, ApiConstants.DefaultFormatDate, null, System.Globalization.DateTimeStyles.None, out var result))
-                return result;
-
-            return null;
+            return DateTimeOffset.TryParse(source, CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind, out var date)
+                    ? date.UtcDateTime
+                    : null;
         }
     }
 }
