@@ -10,7 +10,7 @@
 
         public string Content { get; private set; } = string.Empty;
 
-        public Communication() { }
+        private Communication() { }
 
         public Communication(string content, DateTime? startDate, DateTime? endDate)
         {

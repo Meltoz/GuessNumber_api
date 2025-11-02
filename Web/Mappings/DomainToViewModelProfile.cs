@@ -15,6 +15,10 @@ namespace Web.Mappings
             CreateMap<Communication, CommunicationAdminVM>()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.StartDate.Value.ToString("o")))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.EndDate.Value.ToString("o")));
+
+            CreateMap<Report, ReportVM>()
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.ToString()))
+                .ForMember(dest => dest.Context, opt => opt.MapFrom(src => src.Context.ToString()));
         }
     }
 }

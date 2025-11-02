@@ -1,4 +1,5 @@
-﻿using Infrastructure;
+﻿using Domain.Enums;
+using Infrastructure;
 using Infrastructure.Entities;
 using Meltix.IntegrationTests;
 using System.Net;
@@ -853,6 +854,300 @@ namespace IntegrationTests.Web
 
             // Assert
             Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        }
+
+        #endregion
+
+        #endregion
+
+        #region Reports
+
+        #region GetAll - Tests
+
+        [Fact]
+        public async Task GetReport_ShouldReturnOk()
+        {
+            // Arrange
+            var explanation = "Bug on login page";
+            var mail = "user@example.com";
+            var type = TypeReport.Bug;
+            var context = ContextReport.Site;
+
+            _context.Reports.Add(new ReportEntity
+            {
+                Explanation = explanation,
+                Mail = mail,
+                Type = type,
+                Context = context,
+                Created = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/reportAdmin/search?pageIndex=0&pageSize=10");
+            response.EnsureSuccessStatusCode();
+
+            // Assert
+            var reports = JsonSerializer.Deserialize<List<ReportVM>>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+
+            Assert.NotNull(reports);
+            Assert.Single(reports);
+            var report = reports.First();
+            Assert.Equal(explanation, report.Explanation);
+            Assert.Equal(mail, report.Mail);
+            Assert.Equal(type.ToString(), report.Type);
+            Assert.Equal(context.ToString(), report.Context);
+        }
+
+        [Fact]
+        public async Task GetReport_ShouldReturnTotalCountInHeader()
+        {
+            // Arrange
+            _context.Reports.AddRange(
+                new ReportEntity
+                {
+                    Explanation = "Bug 1",
+                    Mail = "user1@example.com",
+                    Type = TypeReport.Bug,
+                    Context = ContextReport.Site,
+                    Created = DateTime.UtcNow
+                },
+                new ReportEntity
+                {
+                    Explanation = "Bug 2",
+                    Mail = "user2@example.com",
+                    Type = TypeReport.Bug,
+                    Context = ContextReport.Question,
+                    Created = DateTime.UtcNow
+                },
+                new ReportEntity
+                {
+                    Explanation = "Improvement 1",
+                    Mail = "user3@example.com",
+                    Type = TypeReport.Improuvment,
+                    Context = ContextReport.Site,
+                    Created = DateTime.UtcNow
+                }
+            );
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/reportAdmin/search?pageIndex=0&pageSize=10");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.True(response.Headers.Contains("X-Total-Count") || response.Headers.Contains("Total-Count"));
+            var totalCount = response.Headers.GetValues("X-Total-Count").FirstOrDefault()
+                          ?? response.Headers.GetValues("Total-Count").FirstOrDefault();
+            Assert.Equal("3", totalCount);
+        }
+
+        [Fact]
+        public async Task GetReport_WithSearch_ShouldReturnFilteredResults()
+        {
+            // Arrange
+            _context.Reports.AddRange(
+                new ReportEntity
+                {
+                    Explanation = "Login bug on homepage",
+                    Mail = "user1@example.com",
+                    Type = TypeReport.Bug,
+                    Context = ContextReport.Site,
+                    Created = DateTime.UtcNow
+                },
+                new ReportEntity
+                {
+                    Explanation = "Feature request for dark mode",
+                    Mail = "user2@example.com",
+                    Type = TypeReport.Improuvment,
+                    Context = ContextReport.Question,
+                    Created = DateTime.UtcNow
+                }
+            );
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/reportAdmin/search?pageIndex=0&pageSize=10&search=login bug on homepage");
+            response.EnsureSuccessStatusCode();
+
+            // Assert
+            var reports = JsonSerializer.Deserialize<List<ReportVM>>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+
+            Assert.NotNull(reports);
+            Assert.Single(reports);
+            Assert.Contains("Login bug", reports.First().Explanation);
+        }
+
+        [Fact]
+        public async Task GetReport_WithSearchByMail_ShouldReturnMatchingReports()
+        {
+            // Arrange
+            var searchMail = "specific.user@example.com";
+            _context.Reports.AddRange(
+                new ReportEntity
+                {
+                    Explanation = "Bug report 1",
+                    Mail = searchMail,
+                    Type = TypeReport.Bug,
+                    Context = ContextReport.Site,
+                    Created = DateTime.UtcNow
+                },
+                new ReportEntity
+                {
+                    Explanation = "Bug report 2",
+                    Mail = "other@example.com",
+                    Type = TypeReport.Bug,
+                    Context = ContextReport.Question,
+                    Created = DateTime.UtcNow
+                }
+            );
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync($"/api/reportAdmin/search?pageIndex=0&pageSize=10&search={searchMail}");
+            response.EnsureSuccessStatusCode();
+
+            // Assert
+            var reports = JsonSerializer.Deserialize<List<ReportVM>>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+
+            Assert.NotNull(reports);
+            Assert.Single(reports);
+            Assert.Equal(searchMail, reports.First().Mail);
+        }
+
+        [Fact]
+        public async Task GetReport_WithPagination_ShouldReturnCorrectPage()
+        {
+            // Arrange
+            for (int i = 0; i < 15; i++)
+            {
+                _context.Reports.Add(new ReportEntity
+                {
+                    Explanation = $"Bug report {i}",
+                    Mail = $"user{i}@example.com",
+                    Type = TypeReport.Bug,
+                    Context = ContextReport.Site,
+                    Created = DateTime.UtcNow.AddMinutes(-i)
+                });
+            }
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/reportAdmin/search?pageIndex=1&pageSize=10");
+            response.EnsureSuccessStatusCode();
+
+            // Assert
+            var reports = JsonSerializer.Deserialize<List<ReportVM>>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+
+            Assert.NotNull(reports);
+            Assert.Equal(5, reports.Count); // 15 total, page 1 (second page) should have 5 items
+
+            var totalCount = response.Headers.GetValues("X-Total-Count").FirstOrDefault()
+                          ?? response.Headers.GetValues("Total-Count").FirstOrDefault();
+            Assert.Equal("15", totalCount);
+        }
+
+        [Fact]
+        public async Task GetReport_WithNegativePageIndex_ShouldReturnBadRequest()
+        {
+            // Act
+            var response = await _client.GetAsync("/api/reportAdmin/search?pageIndex=-1&pageSize=10");
+
+            // Assert
+            Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetReport_WithZeroPageSize_ShouldReturnBadRequest()
+        {
+            // Act
+            var response = await _client.GetAsync("/api/reportAdmin/search?pageIndex=0&pageSize=0");
+
+            // Assert
+            Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetReport_WithNegativePageSize_ShouldReturnBadRequest()
+        {
+            // Act
+            var response = await _client.GetAsync("/api/reportAdmin/search?pageIndex=0&pageSize=-5");
+
+            // Assert
+            Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetReport_WithNoResults_ShouldReturnEmptyList()
+        {
+            // Act
+            var response = await _client.GetAsync("/api/reportAdmin/search?pageIndex=0&pageSize=10");
+            response.EnsureSuccessStatusCode();
+
+            // Assert
+            var reports = JsonSerializer.Deserialize<List<ReportVM>>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+
+            Assert.NotNull(reports);
+            Assert.Empty(reports);
+
+            var totalCount = response.Headers.GetValues("X-Total-Count").FirstOrDefault()
+                          ?? response.Headers.GetValues("Total-Count").FirstOrDefault();
+            Assert.Equal("0", totalCount);
+        }
+
+        [Fact]
+        public async Task GetReport_WithDifferentReportTypes_ShouldReturnAll()
+        {
+            // Arrange
+            _context.Reports.AddRange(
+                new ReportEntity
+                {
+                    Explanation = "Bug report",
+                    Mail = "user1@example.com",
+                    Type = TypeReport.Bug,
+                    Context = ContextReport.Site,
+                    Created = DateTime.UtcNow
+                },
+                new ReportEntity
+                {
+                    Explanation = "Improvement suggestion",
+                    Mail = "user2@example.com",
+                    Type = TypeReport.Improuvment,
+                    Context = ContextReport.Question,
+                    Created = DateTime.UtcNow
+                }
+            );
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/reportAdmin/search?pageIndex=0&pageSize=10");
+            response.EnsureSuccessStatusCode();
+
+            // Assert
+            var reports = JsonSerializer.Deserialize<List<ReportVM>>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+
+            Assert.NotNull(reports);
+            Assert.Equal(2, reports.Count);
+            Assert.Contains(reports, r => r.Type == TypeReport.Bug.ToString());
+            Assert.Contains(reports, r => r.Type == TypeReport.Improuvment.ToString());
         }
 
         #endregion

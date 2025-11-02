@@ -13,6 +13,8 @@ namespace Infrastructure.Mappings
             CreateMap<CommunicationEntity, Communication>()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.Start))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.End));
+
+            CreateMap<ReportEntity, Report>();
         }
     }
 }

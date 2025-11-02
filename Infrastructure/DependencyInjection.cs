@@ -28,8 +28,9 @@ namespace Infrastructure
 
             services.AddScoped<IActualityRepository, ActualityRepository>();
             services.AddScoped<ICommunicationRepository, CommunicationRepository>();
+            services.AddScoped<IReportRepository, ReportRepository>();
 
-            services.AddAutoMapper(cfg => { }, typeof(DomainToEntityProfile), typeof(EntityToDomainProfile));
+            services.AddAutoMapper(cfg => { cfg.ShouldUseConstructor = ci => ci.IsPrivate; }, typeof(DomainToEntityProfile), typeof(EntityToDomainProfile));
             return services;
         }
 
