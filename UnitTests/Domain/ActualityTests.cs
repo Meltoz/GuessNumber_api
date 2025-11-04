@@ -7,18 +7,6 @@ namespace UnitTests.Domain
         #region Constructor
 
         [Fact]
-        public void Constructor_WithoutParameters_ShouldCreateEmptyActuality()
-        {
-            // Act
-            var actuality = new Actuality();
-
-            // Assert
-            Assert.Equal(Guid.Empty, actuality.Id);
-            Assert.Equal(string.Empty, actuality.Title);
-            Assert.Equal(string.Empty, actuality.Content);
-        }
-
-        [Fact]
         public void Constructor_WithValidParameters_ShouldCreateActuality()
         {
             // Arrange

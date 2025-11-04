@@ -148,7 +148,7 @@ namespace Web.Controllers.Admins
 
         [HttpGet]
         [Route("reportAdmin/search")]
-        public async Task<IActionResult> GetReport(int pageIndex, int pageSize, string? search)
+        public async Task<IActionResult> SearchReport(int pageIndex, int pageSize, string? search)
         {
             if (pageIndex < 0 || pageSize < 1)
                 return BadRequest();
@@ -158,7 +158,24 @@ namespace Web.Controllers.Admins
             Response.AddTotalCountHeader(reports.TotalCount);
 
             return Ok(_mapper.Map<IEnumerable<ReportVM>>(reports.Data));
+        }
 
+        [HttpGet]
+        [Route("reportAdmin/getbyid")]
+        public async Task<IActionResult> ReportById(Guid id)
+        {
+            var report = await _reportService.GetById(id);
+
+            return Ok(_mapper.Map<ReportVM>(report));
+        }
+
+        [HttpDelete]
+        [Route("reportAdmin/delete")]
+        public async Task<IActionResult> DeleteReport(Guid id)
+        {
+            await _reportService.Delete(id);
+
+            return Ok();
         }
 
         #endregion

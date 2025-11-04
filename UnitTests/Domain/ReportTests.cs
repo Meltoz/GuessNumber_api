@@ -5,21 +5,6 @@ namespace UnitTests.Domain
 {
     public class ReportTests
     {
-        #region Constructeur par défaut
-
-        [Fact]
-        public void Constructor_Default_ShouldInitializeWithEmptyValues()
-        {
-            // Act
-            var report = new Report();
-
-            // Assert
-            Assert.Equal(Guid.Empty, report.Id);
-            Assert.Equal(string.Empty, report.Explanation);
-            Assert.Null(report.Mail);
-        }
-
-        #endregion
 
         #region Constructeur avec paramètres (sans Id)
 
@@ -95,7 +80,7 @@ namespace UnitTests.Domain
         public void ChangeExplanation_WithValidExplanation_ShouldUpdateExplanation()
         {
             // Arrange
-            var report = new Report();
+            var report = new Report(TypeReport.Bug, ContextReport.Site, "test explanation", null);
             var newExplanation = "Nouvelle explication valide";
 
             // Act
@@ -112,7 +97,7 @@ namespace UnitTests.Domain
         public void ChangeExplanation_WithDifferentValidLengths_ShouldUpdateExplanation(string explanation)
         {
             // Arrange
-            var report = new Report();
+            var report = new Report(TypeReport.Bug, ContextReport.Site, "test explanation", null);
 
             // Act
             report.ChangeExplanation(explanation);
@@ -134,7 +119,7 @@ namespace UnitTests.Domain
         public void ChangeExplanation_WithNullOrWhitespace_ShouldThrowArgumentException(string explanation)
         {
             // Arrange
-            var report = new Report();
+            var report = new Report(TypeReport.Bug, ContextReport.Site, "test explanation", null);
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() => report.ChangeExplanation(explanation));
@@ -151,7 +136,7 @@ namespace UnitTests.Domain
         public void ChangeExplanation_WithLengthLessThanOrEqualTo5_ShouldThrowArgumentException(string explanation)
         {
             // Arrange
-            var report = new Report();
+            var report = new Report(TypeReport.Bug, ContextReport.Site, "test explanation", null);
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() => report.ChangeExplanation(explanation));
@@ -166,7 +151,7 @@ namespace UnitTests.Domain
         public void ChangeExplanation_WithExactly6Characters_ShouldSucceed()
         {
             // Arrange
-            var report = new Report();
+            var report = new Report(TypeReport.Bug, ContextReport.Site, "test explanation", null);
             var explanation = "123456"; // Exactement 6 caractères
 
             // Act
@@ -180,7 +165,7 @@ namespace UnitTests.Domain
         public void ChangeExplanation_WithWhitespaceAndValidLength_ShouldThrowException()
         {
             // Arrange
-            var report = new Report();
+            var report = new Report(TypeReport.Bug, ContextReport.Site, "test explanation", null);
             var explanation = "      "; // 6 espaces
 
             // Act & Assert
@@ -199,7 +184,7 @@ namespace UnitTests.Domain
         public void ChangeMail_WithValidEmail_ShouldUpdateMail(string mail)
         {
             // Arrange
-            var report = new Report();
+            var report = new Report(TypeReport.Bug, ContextReport.Site, "test explanation", null);
 
             // Act
             report.ChangeMail(mail);
@@ -215,7 +200,7 @@ namespace UnitTests.Domain
         public void ChangeMail_WithNullOrWhitespace_ShouldNotThrowAndKeepNull(string mail)
         {
             // Arrange
-            var report = new Report();
+            var report = new Report(TypeReport.Bug, ContextReport.Site, "test explanation", null);
 
             // Act
             report.ChangeMail(mail);
@@ -242,7 +227,7 @@ namespace UnitTests.Domain
         public void ChangeMail_WithInvalidEmail_ShouldThrowArgumentException(string mail)
         {
             // Arrange
-            var report = new Report();
+            var report = new Report(TypeReport.Bug, ContextReport.Site, "test explanation", null);
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() => report.ChangeMail(mail));
@@ -258,7 +243,7 @@ namespace UnitTests.Domain
         public void ChangeMail_WithMinimumValidEmail_ShouldSucceed()
         {
             // Arrange
-            var report = new Report();
+            var report = new Report(TypeReport.Bug, ContextReport.Site, "test explanation", null);
             var mail = "a@b.co";
 
             // Act
@@ -272,7 +257,7 @@ namespace UnitTests.Domain
         public void ChangeMail_MultipleChanges_ShouldUpdateCorrectly()
         {
             // Arrange
-            var report = new Report();
+            var report = new Report(TypeReport.Bug, ContextReport.Site, "test explanation", null);
             var mail1 = "first@example.com";
             var mail2 = "second@example.com";
 
@@ -299,7 +284,7 @@ namespace UnitTests.Domain
             TypeReport type, ContextReport context)
         {
             // Arrange
-            var report = new Report();
+            var report = new Report(TypeReport.Bug, ContextReport.Site, "test explanation", null);
 
             // Act
             report.ChangeConfiguration(type, context);
@@ -313,7 +298,7 @@ namespace UnitTests.Domain
         public void ChangeConfiguration_MultipleChanges_ShouldUpdateCorrectly()
         {
             // Arrange
-            var report = new Report();
+            var report = new Report(TypeReport.Bug, ContextReport.Site, "test explanation", null);
 
             // Act
             report.ChangeConfiguration(TypeReport.Bug, ContextReport.Site);
