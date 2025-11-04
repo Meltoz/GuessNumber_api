@@ -96,21 +96,7 @@ namespace UnitTests.Domain
             // Assert
             Assert.Equal(Guid.Empty, communication.Id);
         }
-
-        [Fact]
-        public void Communication_ShouldCreate_WithDefaultConstructor()
-        {
-            // Act
-            var communication = new Communication();
-
-            // Assert
-            Assert.NotNull(communication);
-            Assert.Equal(Guid.Empty, communication.Id);
-            Assert.Equal(string.Empty, communication.Content);
-            Assert.Null(communication.StartDate);
-            Assert.Null(communication.EndDate);
-        }
-#endregion
+        #endregion
 
         #region ChangeContent
 

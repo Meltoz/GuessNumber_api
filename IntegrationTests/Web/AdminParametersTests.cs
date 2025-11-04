@@ -1152,6 +1152,271 @@ namespace IntegrationTests.Web
 
         #endregion
 
+        [Fact]
+        public async Task GetReportById_WithValidId_ShouldReturnOk()
+        {
+            // Arrange
+            var existingReport = new ReportEntity
+            {
+                Id = Guid.NewGuid(),
+                Type = TypeReport.Bug,
+                Context = ContextReport.Site,
+                Explanation = "Test Explanation",
+                Mail = "test@example.com"
+            };
+            _context.Reports.Add(existingReport);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync($"/api/reportAdmin/getbyid?id={existingReport.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = JsonSerializer.Deserialize<ReportVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(result);
+            Assert.Equal(existingReport.Id, result.Id);
+            Assert.Equal(nameof(TypeReport.Bug), result.Type);
+            Assert.Equal(nameof(ContextReport.Site), result.Context);
+            Assert.Equal(existingReport.Explanation, result.Explanation);
+            Assert.Equal(existingReport.Mail, result.Mail);
+        }
+
+        [Fact]
+        public async Task GetReportById_WithImprovementType_ShouldReturnOk()
+        {
+            // Arrange
+            var existingReport = new ReportEntity
+            {
+                Id = Guid.NewGuid(),
+                Type = TypeReport.Improuvment,
+                Context = ContextReport.Question,
+                Explanation = "Suggestion for improvement",
+                Mail = "improvement@example.com"
+            };
+            _context.Reports.Add(existingReport);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync($"/api/reportAdmin/getbyid?id={existingReport.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = JsonSerializer.Deserialize<ReportVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(result);
+            Assert.Equal(nameof(TypeReport.Improuvment), result.Type);
+            Assert.Equal(nameof(ContextReport.Question), result.Context);
+        }
+
+        [Fact]
+        public async Task GetReportById_WithNonExistentId_ShouldReturnError()
+        {
+            // Arrange
+            var nonExistentId = Guid.NewGuid();
+
+            // Act
+            var response = await _client.GetAsync($"/api/reportAdmin/getbyid?id={nonExistentId}");
+
+            // Assert
+            Assert.False(response.IsSuccessStatusCode);
+        }
+
+        [Fact]
+        public async Task GetReportById_WithInvalidGuid_ShouldReturnBadRequest()
+        {
+            // Arrange
+            var invalidGuid = "invalid-guid";
+
+            // Act
+            var response = await _client.GetAsync($"/api/reportAdmin/getbyid?id={invalidGuid}");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetReportById_WithNullMail_ShouldReturnOk()
+        {
+            // Arrange
+            var existingReport = new ReportEntity
+            {
+                Id = Guid.NewGuid(),
+                Type = TypeReport.Bug,
+                Context = ContextReport.Site,
+                Explanation = "Explanation without email",
+                Mail = null
+            };
+            _context.Reports.Add(existingReport);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync($"/api/reportAdmin/getbyid?id={existingReport.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = JsonSerializer.Deserialize<ReportVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(result);
+            Assert.Equal(existingReport.Id, result.Id);
+            Assert.Null(result.Mail);
+        }
+
+        [Fact]
+        public async Task DeleteReport_WithValidId_ShouldReturnOk()
+        {
+            // Arrange
+            var existingReport = new ReportEntity
+            {
+                Id = Guid.NewGuid(),
+                Type = TypeReport.Bug,
+                Context = ContextReport.Site,
+                Explanation = "This report will be deleted",
+                Mail = "delete@example.com"
+            };
+            _context.Reports.Add(existingReport);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.DeleteAsync($"/api/reportAdmin/delete?id={existingReport.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+
+            // Vérifier que le rapport a bien été supprimé
+            var deletedReport = await _context.Reports.FindAsync(existingReport.Id);
+            Assert.Null(deletedReport);
+        }
+
+        [Fact]
+        public async Task DeleteReport_WithNonExistentId_ShouldReturnError()
+        {
+            // Arrange
+            var nonExistentId = Guid.NewGuid();
+
+            // Act
+            var response = await _client.DeleteAsync($"/api/reportAdmin/delete?id={nonExistentId}");
+
+            // Assert
+            Assert.False(response.IsSuccessStatusCode);
+        }
+
+        [Fact]
+        public async Task DeleteReport_WithInvalidGuid_ShouldReturnBadRequest()
+        {
+            // Arrange
+            var invalidGuid = "invalid-guid";
+
+            // Act
+            var response = await _client.DeleteAsync($"/api/reportAdmin/delete?id={invalidGuid}");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task DeleteReport_ShouldNotAffectOtherReports()
+        {
+            // Arrange
+            var report1 = new ReportEntity
+            {
+                Id = Guid.NewGuid(),
+                Type = TypeReport.Bug,
+                Context = ContextReport.Site,
+                Explanation = "First report",
+                Mail = "report1@example.com"
+            };
+            var report2 = new ReportEntity
+            {
+                Id = Guid.NewGuid(),
+                Type = TypeReport.Improuvment,
+                Context = ContextReport.Question,
+                Explanation = "Second report",
+                Mail = "report2@example.com"
+            };
+            _context.Reports.AddRange(report1, report2);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.DeleteAsync($"/api/reportAdmin/delete?id={report1.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+
+            var deletedReport = await _context.Reports.FindAsync(report1.Id);
+            var remainingReport = await _context.Reports.FindAsync(report2.Id);
+
+            Assert.Null(deletedReport);
+            Assert.NotNull(remainingReport);
+            Assert.Equal(TypeReport.Improuvment, remainingReport.Type);
+            Assert.Equal(ContextReport.Question, remainingReport.Context);
+        }
+
+        [Fact]
+        public async Task GetReportById_WithAllEnumCombinations_ShouldReturnCorrectValues()
+        {
+            // Arrange - Tester toutes les combinaisons d'enums
+            var reports = new[]
+            {
+        new ReportEntity
+        {
+            Id = Guid.NewGuid(),
+            Type = TypeReport.Bug,
+            Context = ContextReport.Site,
+            Explanation = "Bug on Site",
+            Mail = "test1@example.com"
+        },
+        new ReportEntity
+        {
+            Id = Guid.NewGuid(),
+            Type = TypeReport.Bug,
+            Context = ContextReport.Question,
+            Explanation = "Bug on Question",
+            Mail = "test2@example.com"
+        },
+        new ReportEntity
+        {
+            Id = Guid.NewGuid(),
+            Type = TypeReport.Improuvment,
+            Context = ContextReport.Site,
+            Explanation = "Improvement for Site",
+            Mail = "test3@example.com"
+        },
+        new ReportEntity
+        {
+            Id = Guid.NewGuid(),
+            Type = TypeReport.Improuvment,
+            Context = ContextReport.Question,
+            Explanation = "Improvement for Question",
+            Mail = "test4@example.com"
+        }
+    };
+            _context.Reports.AddRange(reports);
+            await _context.SaveChangesAsync();
+
+            // Act & Assert
+            foreach (var report in reports)
+            {
+                var response = await _client.GetAsync($"/api/reportAdmin/getbyid?id={report.Id}");
+                response.EnsureSuccessStatusCode();
+
+                var result = JsonSerializer.Deserialize<ReportVM>(
+                    await response.Content.ReadAsStringAsync(),
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+
+                Assert.NotNull(result);
+                Assert.Equal(report.Type.ToString(), result.Type);
+                Assert.Equal(report.Context.ToString(), result.Context);
+            }
+        }
+
         #endregion
 
     }

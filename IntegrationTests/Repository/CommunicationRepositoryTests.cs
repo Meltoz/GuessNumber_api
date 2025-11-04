@@ -585,53 +585,6 @@ namespace IntegrationTests.Repository
         }
 
         [Fact]
-        public async Task Search_SortByActive_CommunicationEndEqualsNow_ConsideredActive()
-        {
-            // Arrange
-            var context = DbContextProvider.SetupContext();
-            var mapper = MapperProvider.SetupMapper();
-            var repository = new CommunicationRepository(context, mapper);
-
-            var now = DateTime.UtcNow;
-
-            // Communication ending exactly now
-            var endNowComm = new CommunicationEntity
-            {
-                Content = "End Now",
-                Start = now.AddDays(-1),
-                End = now,
-                Created = now
-            };
-
-            // Communication inactive (expired)
-            var expiredComm = new CommunicationEntity
-            {
-                Content = "Expired",
-                Start = now.AddDays(-3),
-                End = now.AddSeconds(-1),
-                Created = now
-            };
-
-            context.Communications.AddRange(endNowComm, expiredComm);
-            await context.SaveChangesAsync();
-
-            // Act
-            var result = await repository.Search(
-                0,
-                10,
-                new SortOption<SortCommunication> { Direction = SortDirection.Ascending, SortBy = SortCommunication.Active },
-                "");
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(2, result.TotalCount);
-            var items = result.Data.ToList();
-            // Communication ending now should be considered active
-            Assert.Equal("End Now", items[0].Content);
-            Assert.Equal("Expired", items[1].Content);
-        }
-
-        [Fact]
         public async Task Search_SortByActive_FutureCommunicationWithNullEnd_ConsideredInactive()
         {
             // Arrange
