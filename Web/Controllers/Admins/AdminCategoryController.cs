@@ -1,5 +1,6 @@
 ﻿using Application.Services;
 using AutoMapper;
+using Domain.Party;
 using Microsoft.AspNetCore.Mvc;
 using Shared;
 using Shared.Enums.Sorting;
@@ -42,6 +43,19 @@ namespace Web.Controllers.Admins
 
             return Ok(_mapper.Map<CategoryAdminVM>(categoryInserted));
         }
+
+        [HttpPatch]
+        public async Task<IActionResult> Update([FromBody]CategoryAdminVM model)
+        {
+            if(!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var category = _mapper.Map<Category>(model);
+            var categoryUpdated = await _categoryService.Update(category);
+
+            return Ok(_mapper.Map<CategoryAdminVM>(categoryUpdated));
+        }
+
 
         private bool GetSorting(string sort, out SortOption<SortCategory> sortOption)
         {

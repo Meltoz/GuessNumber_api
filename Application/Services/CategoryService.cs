@@ -1,4 +1,5 @@
-﻿using Application.Interfaces.Repository;
+﻿using Application.Exceptions;
+using Application.Interfaces.Repository;
 using Domain.Party;
 using Shared;
 using Shared.Enums.Sorting;
@@ -24,6 +25,25 @@ namespace Application.Services
             var categoryInserted = await _categoryRepository.InsertAsync(category);
 
             return categoryInserted;
+        }
+
+        public async Task<Category> Update(Category c) {
+            if (c == null || c.Id == Guid.Empty)
+                throw new ArgumentException("category");
+
+            var category = await _categoryRepository.GetByIdAsync(c.Id);
+
+            if (category is null)
+                throw new EntityNotFoundException(c.Id);
+
+            if(category.Name != c.Name)
+            {
+                category.ChangeName(c.Name);
+            }
+
+            var categoryUpdate = await _categoryRepository.UpdateAsync(category);
+
+            return categoryUpdate;
         }
     }
 }
