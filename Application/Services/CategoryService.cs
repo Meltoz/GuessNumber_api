@@ -18,7 +18,7 @@ namespace Application.Services
             return categories;
         }
 
-        public async Task<Category> CreateNew(string name)
+        public async Task<Category> CreateNewAsync(string name)
         {
             var category = new Category(name);
 
@@ -27,7 +27,7 @@ namespace Application.Services
             return categoryInserted;
         }
 
-        public async Task<Category> Update(Category c) {
+        public async Task<Category> UpdateAsync(Category c) {
             if (c == null || c.Id == Guid.Empty)
                 throw new ArgumentException("category");
 
@@ -44,6 +44,20 @@ namespace Application.Services
             var categoryUpdate = await _categoryRepository.UpdateAsync(category);
 
             return categoryUpdate;
+        }
+
+
+        public async Task DeleteAsync(Guid id)
+        {
+            if (id == Guid.Empty)
+                throw new ArgumentException("id");
+
+            var categoryToDelete = await _categoryRepository.GetByIdAsync(id);
+
+            if (categoryToDelete is null)
+                throw new EntityNotFoundException(id);
+
+            _categoryRepository.Delete(id);
         }
     }
 }

@@ -39,7 +39,7 @@ namespace Web.Controllers.Admins
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
             
-            var categoryInserted = await _categoryService.CreateNew(category.Name);
+            var categoryInserted = await _categoryService.CreateNewAsync(category.Name);
 
             return Ok(_mapper.Map<CategoryAdminVM>(categoryInserted));
         }
@@ -49,13 +49,22 @@ namespace Web.Controllers.Admins
         {
             if(!ModelState.IsValid)
                 return BadRequest(ModelState);
+            if (model.Id == null)
+                return BadRequest("Missing id");
 
             var category = _mapper.Map<Category>(model);
-            var categoryUpdated = await _categoryService.Update(category);
+            var categoryUpdated = await _categoryService.UpdateAsync(category);
 
             return Ok(_mapper.Map<CategoryAdminVM>(categoryUpdated));
         }
 
+        [HttpDelete]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            await _categoryService.DeleteAsync(id);
+
+            return Ok();
+        }
 
         private bool GetSorting(string sort, out SortOption<SortCategory> sortOption)
         {

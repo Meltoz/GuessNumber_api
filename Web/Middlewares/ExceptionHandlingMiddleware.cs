@@ -24,7 +24,7 @@ namespace Web.Middlewares
             catch(EntityNotFoundException ex)
             {
                 _logger.LogError(ex, "Entity Not Found: {Message}", ex.Message);
-                await WriteProblemDetails(context, StatusCodes.Status500InternalServerError, "Entity not found", ex.Message);
+                await WriteProblemDetails(context, StatusCodes.Status404NotFound, "Entity not found", ex.Message);
             }
             catch (ValidationException ex)
             {

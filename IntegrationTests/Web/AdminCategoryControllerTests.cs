@@ -1137,5 +1137,181 @@ namespace IntegrationTests.Web
             Assert.Equal("ElEcTrOnIcS", categoryResult.Name);
         }
         #endregion
+
+        #region Update Tests
+        [Fact]
+        public async Task Update_ShouldReturnOk_WithValidCategory()
+        {
+            // Arrange
+            // D'abord créer une catégorie
+            var newCategory = new CategoryAdminVM
+            {
+                Name = "Electronics"
+            };
+            var createContent = new StringContent(
+                JsonSerializer.Serialize(newCategory),
+                Encoding.UTF8,
+                "application/json"
+            );
+            var createResponse = await _client.PostAsync("/api/AdminCategory/Add", createContent);
+            var createdCategory = JsonSerializer.Deserialize<CategoryAdminVM>(
+                await createResponse.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+
+            // Maintenant mettre à jour la catégorie
+            var updatedCategory = new CategoryAdminVM
+            {
+                Id = createdCategory.Id,
+                Name = "Updated Electronics"
+            };
+            var updateContent = new StringContent(
+                JsonSerializer.Serialize(updatedCategory),
+                Encoding.UTF8,
+                "application/json"
+            );
+
+            // Act
+            var response = await _client.PatchAsync("/api/AdminCategory/Update", updateContent);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var categoryResult = JsonSerializer.Deserialize<CategoryAdminVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(categoryResult);
+            Assert.Equal(updatedCategory.Id, categoryResult.Id);
+            Assert.Equal(updatedCategory.Name, categoryResult.Name);
+        }
+
+        [Fact]
+        public async Task Update_ShouldReturnBadRequest_WithInvalidModel()
+        {
+            // Arrange
+            var invalidCategory = new CategoryAdminVM
+            {
+                Id = Guid.NewGuid(),
+                Name = "" // Nom vide (invalide selon les règles de validation)
+            };
+            var content = new StringContent(
+                JsonSerializer.Serialize(invalidCategory),
+                Encoding.UTF8,
+                "application/json"
+            );
+
+            // Act
+            var response = await _client.PatchAsync("/api/AdminCategory/Update", content);
+
+            // Assert
+            Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Update_ShouldReturnBadRequest_WithMissingId()
+        {
+            // Arrange
+            var categoryWithoutId = new CategoryAdminVM
+            {
+                Name = "Electronics"
+            };
+            var content = new StringContent(
+                JsonSerializer.Serialize(categoryWithoutId),
+                Encoding.UTF8,
+                "application/json"
+            );
+
+            // Act
+            var response = await _client.PatchAsync("/api/AdminCategory/Update", content);
+
+            // Assert
+            Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+        }
+        #endregion
+
+        #region Delete Tests
+        [Fact]
+        public async Task Delete_ShouldReturnOk_WithValidId()
+        {
+            // Arrange
+            // D'abord créer une catégorie à supprimer
+            var newCategory = new CategoryAdminVM
+            {
+                Name = "ToDelete"
+            };
+            var createContent = new StringContent(
+                JsonSerializer.Serialize(newCategory),
+                Encoding.UTF8,
+                "application/json"
+            );
+            var createResponse = await _client.PostAsync("/api/AdminCategory/Add", createContent);
+            var createdCategory = JsonSerializer.Deserialize<CategoryAdminVM>(
+                await createResponse.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+
+            // Act
+            var response = await _client.DeleteAsync($"/api/AdminCategory/Delete?id={createdCategory.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Delete_ShouldReturnNotFound_WithNonExistentId()
+        {
+            // Arrange
+            var nonExistentId = Guid.NewGuid();
+
+            // Act
+            var response = await _client.DeleteAsync($"/api/AdminCategory/Delete?id={nonExistentId}");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Delete_ShouldReturnBadRequest_WithEmptyGuid()
+        {
+            // Arrange
+            var emptyGuid = Guid.Empty;
+
+            // Act
+            var response = await _client.DeleteAsync($"/api/AdminCategory/Delete?id={emptyGuid}");
+
+            // Assert
+            Assert.Equal(System.Net.HttpStatusCode.InternalServerError, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Delete_ShouldActuallyRemoveCategory()
+        {
+            // Arrange
+            // Créer une catégorie
+            var newCategory = new CategoryAdminVM
+            {
+                Name = "ToDeleteAndVerify"
+            };
+            var createContent = new StringContent(
+                JsonSerializer.Serialize(newCategory),
+                Encoding.UTF8,
+                "application/json"
+            );
+            var createResponse = await _client.PostAsync("/api/AdminCategory/Add", createContent);
+            var createdCategory = JsonSerializer.Deserialize<CategoryAdminVM>(
+                await createResponse.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+
+            // Act
+            var deleteResponse = await _client.DeleteAsync($"/api/AdminCategory/Delete?id={createdCategory.Id}");
+            deleteResponse.EnsureSuccessStatusCode();
+
+            // Assert - Vérifier que la catégorie n'existe plus
+            var getResponse = await _client.GetAsync($"/api/AdminCategory/Get?id={createdCategory.Id}");
+            Assert.Equal(System.Net.HttpStatusCode.NotFound, getResponse.StatusCode);
+        }
+        #endregion
     }
 }
