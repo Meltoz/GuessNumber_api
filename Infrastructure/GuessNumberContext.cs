@@ -11,6 +11,8 @@ namespace Infrastructure
 
         public DbSet<ReportEntity> Reports { get; set; }
 
+        public DbSet<CategoryEntity> Categories { get; set; }
+
 
         public GuessNumberContext()
         {

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Domain;
+using Domain.Party;
 using Infrastructure.Entities;
 
 namespace Infrastructure.Mappings
@@ -15,6 +16,8 @@ namespace Infrastructure.Mappings
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.End));
 
             CreateMap<ReportEntity, Report>();
+
+            CreateMap<CategoryEntity, Category>();
         }
     }
 }

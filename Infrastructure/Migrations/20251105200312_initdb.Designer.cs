@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(GuessNumberContext))]
-    [Migration("20251102183045_init db")]
+    [Migration("20251105200312_initdb")]
     partial class initdb
     {
         /// <inheritdoc />
@@ -55,6 +55,27 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Actualities");
+                });
+
+            modelBuilder.Entity("Infrastructure.Entities.CategoryEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Categories");
                 });
 
             modelBuilder.Entity("Infrastructure.Entities.CommunicationEntity", b =>

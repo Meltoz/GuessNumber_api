@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Domain;
+using Domain.Party;
 using Web.ViewModels;
 
 namespace Web.Mappings
@@ -19,6 +20,8 @@ namespace Web.Mappings
             CreateMap<Report, ReportVM>()
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.ToString()))
                 .ForMember(dest => dest.Context, opt => opt.MapFrom(src => src.Context.ToString()));
+
+            CreateMap<Category, CategoryAdminVM>();
         }
     }
 }

@@ -10,6 +10,7 @@ namespace Application
             services.AddScoped<ActualityService>();
             services.AddScoped<CommunicationService>();
             services.AddScoped<ReportService>();
+            services.AddScoped<CategoryService>();
 
 
             return services;
