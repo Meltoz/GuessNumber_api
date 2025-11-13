@@ -627,7 +627,7 @@ namespace UnitTests.Application
 
         #endregion
 
-        #region Delete Tests
+        #region Delete
 
         [Fact]
         public async Task DeleteAsync_WithEmptyId_ShouldThrowArgumentException()
@@ -690,6 +690,87 @@ namespace UnitTests.Application
             repoMock.Verify(r => r.GetByIdAsync(categoryId), Times.Once);
         }
 
+        [Fact]
+        public async Task DeleteAsync_WithValidId_ShouldNotCallRepositoryIfGetByIdThrows()
+        {
+            // Arrange
+            var categoryId = Guid.NewGuid();
+            var repoMock = new Mock<ICategoryRepository>();
+            repoMock.Setup(r => r.GetByIdAsync(categoryId))
+                .ReturnsAsync((Category)null);
+            var service = new CategoryService(repoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<EntityNotFoundException>(() => service.DeleteAsync(categoryId));
+            repoMock.Verify(r => r.Delete(It.IsAny<Guid>()), Times.Never);
+        }
+
+        #endregion
+
+        #region GetById 
+
+        [Fact]
+        public async Task GetByIdAsync_WithEmptyId_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var repoMock = new Mock<ICategoryRepository>();
+            var service = new CategoryService(repoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => service.GetByIdAsync(Guid.Empty));
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_WithNonExistentCategory_ShouldThrowEntityNotFoundException()
+        {
+            // Arrange
+            var categoryId = Guid.NewGuid();
+            var repoMock = new Mock<ICategoryRepository>();
+            repoMock.Setup(r => r.GetByIdAsync(categoryId))
+                .ReturnsAsync((Category)null);
+            var service = new CategoryService(repoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<EntityNotFoundException>(() => service.GetByIdAsync(categoryId));
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_WithValidId_ShouldReturnCategory()
+        {
+            // Arrange
+            var categoryId = Guid.NewGuid();
+            var expectedCategory = new Category(categoryId, "Test Category");
+            var repoMock = new Mock<ICategoryRepository>();
+            repoMock.Setup(r => r.GetByIdAsync(categoryId))
+                .ReturnsAsync(expectedCategory);
+            var service = new CategoryService(repoMock.Object);
+
+            // Act
+            var result = await service.GetByIdAsync(categoryId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(expectedCategory.Id, result.Id);
+            Assert.Equal(expectedCategory.Name, result.Name);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_WithValidId_ShouldCallRepositoryOnce()
+        {
+            // Arrange
+            var categoryId = Guid.NewGuid();
+            var category = new Category(categoryId, "Test Category");
+            var repoMock = new Mock<ICategoryRepository>();
+            repoMock.Setup(r => r.GetByIdAsync(categoryId))
+                .ReturnsAsync(category);
+            var service = new CategoryService(repoMock.Object);
+
+            // Act
+            await service.GetByIdAsync(categoryId);
+
+            // Assert
+            repoMock.Verify(r => r.GetByIdAsync(categoryId), Times.Once);
+        }
         #endregion
     }
 }

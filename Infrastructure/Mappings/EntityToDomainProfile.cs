@@ -18,6 +18,8 @@ namespace Infrastructure.Mappings
             CreateMap<ReportEntity, Report>();
 
             CreateMap<CategoryEntity, Category>();
+
+            CreateMap<QuestionEntity, Question>();
         }
     }
 }

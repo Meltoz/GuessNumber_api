@@ -18,6 +18,10 @@ namespace Infrastructure.Mappings
             CreateMap<Report, ReportEntity>();
 
             CreateMap<Category, CategoryEntity>();
+
+            CreateMap<Question, QuestionEntity>()
+                .ForMember(dest => dest.Category, opt => opt.Ignore())
+                .ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.Category.Id));
         }
 
     }

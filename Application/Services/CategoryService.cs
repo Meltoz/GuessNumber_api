@@ -49,15 +49,21 @@ namespace Application.Services
 
         public async Task DeleteAsync(Guid id)
         {
-            if (id == Guid.Empty)
+            var category = await GetByIdAsync(id);
+
+            _categoryRepository.Delete(category.Id);
+        }
+
+        public async Task<Category> GetByIdAsync(Guid id)
+        {
+            if(id == Guid.Empty)
                 throw new ArgumentException("id");
 
-            var categoryToDelete = await _categoryRepository.GetByIdAsync(id);
-
-            if (categoryToDelete is null)
+            var category = await _categoryRepository.GetByIdAsync(id);
+            if (category is null)
                 throw new EntityNotFoundException(id);
 
-            _categoryRepository.Delete(id);
+            return category;
         }
     }
 }

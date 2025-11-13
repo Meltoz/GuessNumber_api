@@ -29,10 +29,8 @@ namespace Meltix.IntegrationTests
                 if (descriptor != null)
                     services.Remove(descriptor);
 
-                // 🧩 Injecter ton propre contexte externe (fourni depuis le test)
                 services.AddSingleton(_externalContext);
 
-                // ⚠️ Si tu veux t’assurer que EF ne tente pas de le disposer
                 services.AddDbContext<GuessNumberContext>(options =>
                 {
                     options.UseSqlite(_externalContext.Database.GetDbConnection());

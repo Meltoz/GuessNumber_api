@@ -6,6 +6,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using Web.ViewModels;
+using Web.ViewModels.Admin;
 
 namespace IntegrationTests.Web
 {
@@ -853,7 +854,7 @@ namespace IntegrationTests.Web
             var response = await _client.DeleteAsync("/api/communicationAdmin/delete");
 
             // Assert
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
 
         #endregion
