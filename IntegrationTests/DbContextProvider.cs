@@ -15,7 +15,7 @@ namespace Meltix.IntegrationTests
                 .UseSqlite(connection)
                 .Options;
 
-            var context = new GuessNumberContext(options);
+            var context = new GuessNumberContext(options, true);
 
             context.Database.EnsureCreated();
 

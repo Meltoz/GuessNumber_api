@@ -51,7 +51,7 @@ namespace Infrastructure.Repositories
         // ------------------------------
         public virtual async Task<TDomain?> GetByIdAsync(Guid id)
         {
-            var entity = await _dbSet.SingleOrDefaultAsync(x => x.Id == id);
+            var entity = await _dbSet.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id);
             return _mapper.Map<TDomain?>(entity);
         }
 

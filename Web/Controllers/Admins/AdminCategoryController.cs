@@ -6,7 +6,7 @@ using Shared;
 using Shared.Enums.Sorting;
 using System.Text.RegularExpressions;
 using Web.Extensions;
-using Web.ViewModels;
+using Web.ViewModels.Admin;
 
 namespace Web.Controllers.Admins
 {
@@ -34,7 +34,7 @@ namespace Web.Controllers.Admins
         }
 
         [HttpPost]
-        public async Task<IActionResult> Add([FromBody] CategoryAdminVM category)
+        public async Task<IActionResult> Add([FromBody] CategoryAdminAddVM category)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -49,8 +49,7 @@ namespace Web.Controllers.Admins
         {
             if(!ModelState.IsValid)
                 return BadRequest(ModelState);
-            if (model.Id == null)
-                return BadRequest("Missing id");
+
 
             var category = _mapper.Map<Category>(model);
             var categoryUpdated = await _categoryService.UpdateAsync(category);

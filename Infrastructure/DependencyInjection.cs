@@ -30,6 +30,7 @@ namespace Infrastructure
             services.AddScoped<ICommunicationRepository, CommunicationRepository>();
             services.AddScoped<IReportRepository, ReportRepository>();
             services.AddScoped<ICategoryRepository, CategoryRepository>();
+            services.AddScoped<IQuestionRepository, QuestionRepository>();
 
             services.AddAutoMapper(cfg => { cfg.ShouldUseConstructor = ci => ci.IsPrivate; }, typeof(DomainToEntityProfile), typeof(EntityToDomainProfile));
             return services;

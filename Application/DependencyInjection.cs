@@ -11,6 +11,7 @@ namespace Application
             services.AddScoped<CommunicationService>();
             services.AddScoped<ReportService>();
             services.AddScoped<CategoryService>();
+            services.AddScoped<QuestionService>();
 
 
             return services;

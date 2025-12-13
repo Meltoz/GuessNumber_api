@@ -3,7 +3,7 @@ using Domain;
 using Domain.Party;
 using System.Globalization;
 using Web.Converters;
-using Web.ViewModels;
+using Web.ViewModels.Admin;
 
 namespace Web.Mappings
 {
@@ -22,6 +22,8 @@ namespace Web.Mappings
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.EndDate));
 
             CreateMap<CategoryAdminVM, Category>();
+
+            CreateMap<QuestionAdminVM, Question>();
         }
 
     }

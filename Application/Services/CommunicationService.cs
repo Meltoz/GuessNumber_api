@@ -43,7 +43,7 @@ namespace Application.Services
 
             return await _communicationRepository.UpdateAsync(commToUpdate);
         }
-
+            
         public async Task DeleteAsync(Guid idActuality)
         {
             var communication = await _communicationRepository.GetByIdAsync(idActuality);

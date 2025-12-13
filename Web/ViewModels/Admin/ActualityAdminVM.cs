@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Web.ViewModels
+namespace Web.ViewModels.Admin
 {
     public class ActualityAdminVM
     {

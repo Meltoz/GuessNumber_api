@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Web.ViewModels;
+using Web.ViewModels.Admin;
 
 namespace IntegrationTests.Web
 {
@@ -910,65 +910,6 @@ namespace IntegrationTests.Web
         }
 
         [Fact]
-        public async Task Add_ShouldIgnoreIdInRequest_WhenIdIsProvided()
-        {
-            // Arrange
-            var providedId = Guid.NewGuid();
-            var newCategory = new CategoryAdminVM
-            {
-                Id = providedId,
-                Name = "Electronics"
-            };
-            var content = new StringContent(
-                JsonSerializer.Serialize(newCategory),
-                Encoding.UTF8,
-                "application/json"
-            );
-
-            // Act
-            var response = await _client.PostAsync("/api/AdminCategory/Add", content);
-
-            // Assert
-            response.EnsureSuccessStatusCode();
-            var categoryResult = JsonSerializer.Deserialize<CategoryAdminVM>(
-                await response.Content.ReadAsStringAsync(),
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-            );
-            Assert.NotNull(categoryResult);
-            // L'ID devrait être généré par le serveur, pas celui fourni
-            Assert.NotEqual(providedId, categoryResult.Id);
-        }
-
-        [Fact]
-        public async Task Add_ShouldAcceptNullId()
-        {
-            // Arrange
-            var newCategory = new CategoryAdminVM
-            {
-                Id = null,
-                Name = "Electronics"
-            };
-            var content = new StringContent(
-                JsonSerializer.Serialize(newCategory),
-                Encoding.UTF8,
-                "application/json"
-            );
-
-            // Act
-            var response = await _client.PostAsync("/api/AdminCategory/Add", content);
-
-            // Assert
-            response.EnsureSuccessStatusCode();
-            var categoryResult = JsonSerializer.Deserialize<CategoryAdminVM>(
-                await response.Content.ReadAsStringAsync(),
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-            );
-            Assert.NotNull(categoryResult);
-            Assert.NotNull(categoryResult.Id);
-            Assert.NotEqual(Guid.Empty, categoryResult.Id);
-        }
-
-        [Fact]
         public async Task Add_ShouldReturnCorrectContentType()
         {
             // Arrange
@@ -1017,7 +958,7 @@ namespace IntegrationTests.Web
                     await response.Content.ReadAsStringAsync(),
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                 );
-                createdIds.Add(result.Id.Value);
+                createdIds.Add(result.Id);
             }
 
             // Assert
@@ -1196,27 +1137,6 @@ namespace IntegrationTests.Web
             };
             var content = new StringContent(
                 JsonSerializer.Serialize(invalidCategory),
-                Encoding.UTF8,
-                "application/json"
-            );
-
-            // Act
-            var response = await _client.PatchAsync("/api/AdminCategory/Update", content);
-
-            // Assert
-            Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task Update_ShouldReturnBadRequest_WithMissingId()
-        {
-            // Arrange
-            var categoryWithoutId = new CategoryAdminVM
-            {
-                Name = "Electronics"
-            };
-            var content = new StringContent(
-                JsonSerializer.Serialize(categoryWithoutId),
                 Encoding.UTF8,
                 "application/json"
             );

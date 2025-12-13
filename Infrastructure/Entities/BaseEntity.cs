@@ -9,6 +9,6 @@ namespace Infrastructure.Entities
 
         public DateTime Created { get; set; }
 
-        public DateTime Updated { get; set; } = DateTime.UtcNow;
+        public DateTime Updated { get; set; }
     }
 }

@@ -2,6 +2,7 @@
 using Domain;
 using Domain.Party;
 using Web.ViewModels;
+using Web.ViewModels.Admin;
 
 namespace Web.Mappings
 {
@@ -22,6 +23,8 @@ namespace Web.Mappings
                 .ForMember(dest => dest.Context, opt => opt.MapFrom(src => src.Context.ToString()));
 
             CreateMap<Category, CategoryAdminVM>();
+
+            CreateMap<Question, QuestionAdminVM>();
         }
     }
 }
