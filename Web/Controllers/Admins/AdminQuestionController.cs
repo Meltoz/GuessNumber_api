@@ -1,7 +1,8 @@
 ﻿using Application.Services;
 using AutoMapper;
-using Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Filters;
+using Web.Extensions;
 using Web.ViewModels.Admin;
 
 namespace Web.Controllers.Admins
@@ -13,6 +14,29 @@ namespace Web.Controllers.Admins
         private readonly QuestionService _questionService = qs;
         private readonly CategoryService _categoryService = cs;
         private readonly IMapper _mapper = m;
+
+        [HttpGet]
+        public async Task<IActionResult> Search(int pageIndex, int pageSize, [FromQuery]QuestionFilter filter)
+        {
+            if (pageIndex < 0 || pageSize < 1)
+                return BadRequest();
+
+            var questions = await _questionService.Search(pageIndex, pageSize, filter);
+
+            Response.AddTotalCountHeader(questions.TotalCount);
+            return Ok(_mapper.Map<IEnumerable<QuestionAdminVM>>(questions.Data));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetDetail(Guid id)
+        {
+            if(id == Guid.Empty)
+                return BadRequest();
+
+            var question = await _questionService.GetById(id);
+
+            return Ok(_mapper.Map<QuestionAdminVM>(question));
+        }
 
         [HttpPost]
         public async Task<IActionResult> Add([FromBody] QuestionAdminAddVM model)
@@ -32,6 +56,25 @@ namespace Web.Controllers.Admins
                 model.Unit);
 
             return Ok(_mapper.Map<QuestionAdminVM>(question));
+        }
+
+
+        [HttpPatch]
+        public async Task<IActionResult> Update([FromBody] QuestionAdminVM model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            return Ok();
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            await _questionService.DeleteQuestion(id);
+
+            return Ok();
+
         }
     }
 }
