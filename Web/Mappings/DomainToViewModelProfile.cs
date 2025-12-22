@@ -25,6 +25,8 @@ namespace Web.Mappings
             CreateMap<Category, CategoryAdminVM>();
 
             CreateMap<Question, QuestionAdminVM>();
+
+            CreateMap<Proposal, ProposalAdminVM>();
         }
     }
 }
