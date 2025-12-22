@@ -8,9 +8,19 @@ namespace Application.Services
     {
         private readonly IProposalRepository _proposalRepository = pr;
 
-        public async void Delete(Guid id)
+        public async Task<Proposal> GoToNext(Guid? idPrevious)
         {
-            var proposal = _proposalRepository.GetByIdAsync(id);
+            if(idPrevious != null)
+            {
+                await Delete(idPrevious.Value);
+            }
+
+            return await _proposalRepository.GetNext();
+        }
+
+        public async Task Delete(Guid id)
+        {
+            var proposal = await _proposalRepository.GetByIdAsync(id);
 
             if (proposal is null)
                 throw new EntityNotFoundException(id);

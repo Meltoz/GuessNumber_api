@@ -13,7 +13,7 @@ namespace Infrastructure.Repositories
 {
     public class ProposalRepository : BaseRepository<Proposal, ProposalEntity>, IProposalRepository
     {
-        public ProposalRepository(DbContext context, IMapper mapper) : base(context, mapper)
+        public ProposalRepository(GuessNumberContext context, IMapper mapper) : base(context, mapper)
         {
         }
 
