@@ -20,6 +20,9 @@ namespace Infrastructure.Mappings
             CreateMap<CategoryEntity, Category>();
 
             CreateMap<QuestionEntity, Question>();
+
+            CreateMap<ProposalEntity, Proposal>();
         }
     }
 }
+                                                            
