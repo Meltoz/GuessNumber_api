@@ -31,6 +31,7 @@ namespace Infrastructure
             services.AddScoped<IReportRepository, ReportRepository>();
             services.AddScoped<ICategoryRepository, CategoryRepository>();
             services.AddScoped<IQuestionRepository, QuestionRepository>();
+            services.AddScoped<IProposalRepository, ProposalRepository>();
 
             services.AddAutoMapper(cfg => { cfg.ShouldUseConstructor = ci => ci.IsPrivate; }, typeof(DomainToEntityProfile), typeof(EntityToDomainProfile));
             return services;

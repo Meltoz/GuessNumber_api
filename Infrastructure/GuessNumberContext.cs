@@ -18,6 +18,8 @@ namespace Infrastructure
 
         public DbSet<QuestionEntity> Questions { get; set; }
 
+        public DbSet<ProposalEntity> Proposals { get; set; }
+
 
         public GuessNumberContext()
         {

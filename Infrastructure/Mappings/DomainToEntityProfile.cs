@@ -22,6 +22,8 @@ namespace Infrastructure.Mappings
             CreateMap<Question, QuestionEntity>()
                 .ForMember(dest => dest.Category, opt => opt.Ignore())
                 .ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.Category.Id));
+
+            CreateMap<Proposal, ProposalEntity>();
         }
 
     }

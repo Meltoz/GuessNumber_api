@@ -12,6 +12,7 @@ namespace Application
             services.AddScoped<ReportService>();
             services.AddScoped<CategoryService>();
             services.AddScoped<QuestionService>();
+            services.AddScoped<ProposalService>();
 
 
             return services;
