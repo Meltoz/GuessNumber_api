@@ -471,5 +471,375 @@ namespace IntegrationTests.Web
         }
 
         #endregion
+
+        #region Count
+
+        [Fact]
+        public async Task Count_WithNoProposals_ShouldReturnZero()
+        {
+            // Arrange - Empty database
+
+            // Act
+            var response = await _client.GetAsync("/api/AdminProposal/Count");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var count = JsonSerializer.Deserialize<int>(
+                await response.Content.ReadAsStringAsync(),
+                _jsonOptions
+            );
+
+            Assert.Equal(0, count);
+        }
+
+        [Fact]
+        public async Task Count_WithSingleProposal_ShouldReturnOne()
+        {
+            // Arrange
+            var proposal = new ProposalEntity
+            {
+                Id = Guid.NewGuid(),
+                Libelle = "Single proposal test question",
+                Response = "42",
+                Created = DateTime.UtcNow,
+                Updated = DateTime.UtcNow
+            };
+
+            _context.Proposals.Add(proposal);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/AdminProposal/Count");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var count = JsonSerializer.Deserialize<int>(
+                await response.Content.ReadAsStringAsync(),
+                _jsonOptions
+            );
+
+            Assert.Equal(1, count);
+        }
+
+        [Fact]
+        public async Task Count_WithMultipleProposals_ShouldReturnCorrectCount()
+        {
+            // Arrange
+            var proposal1 = new ProposalEntity
+            {
+                Id = Guid.NewGuid(),
+                Libelle = "Proposal number one test",
+                Response = "10",
+                Created = DateTime.UtcNow,
+                Updated = DateTime.UtcNow
+            };
+
+            var proposal2 = new ProposalEntity
+            {
+                Id = Guid.NewGuid(),
+                Libelle = "Proposal number two test",
+                Response = "20",
+                Created = DateTime.UtcNow,
+                Updated = DateTime.UtcNow
+            };
+
+            var proposal3 = new ProposalEntity
+            {
+                Id = Guid.NewGuid(),
+                Libelle = "Proposal number three test",
+                Response = "30",
+                Created = DateTime.UtcNow,
+                Updated = DateTime.UtcNow
+            };
+
+            _context.Proposals.Add(proposal1);
+            _context.Proposals.Add(proposal2);
+            _context.Proposals.Add(proposal3);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/AdminProposal/Count");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var count = JsonSerializer.Deserialize<int>(
+                await response.Content.ReadAsStringAsync(),
+                _jsonOptions
+            );
+
+            Assert.Equal(3, count);
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(5)]
+        [InlineData(10)]
+        [InlineData(15)]
+        public async Task Count_WithDifferentCounts_ShouldReturnCorrectValue(int expectedCount)
+        {
+            // Arrange
+            for (int i = 0; i < expectedCount; i++)
+            {
+                var proposal = new ProposalEntity
+                {
+                    Id = Guid.NewGuid(),
+                    Libelle = $"Proposal number testing {i}",
+                    Response = $"{i}",
+                    Created = DateTime.UtcNow,
+                    Updated = DateTime.UtcNow
+                };
+
+                _context.Proposals.Add(proposal);
+            }
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/AdminProposal/Count");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var count = JsonSerializer.Deserialize<int>(
+                await response.Content.ReadAsStringAsync(),
+                _jsonOptions
+            );
+
+            Assert.Equal(expectedCount, count);
+        }
+
+        [Fact]
+        public async Task Count_WithMinimalFields_ShouldCountCorrectly()
+        {
+            // Arrange
+            var proposal1 = new ProposalEntity
+            {
+                Id = Guid.NewGuid(),
+                Libelle = "Minimal proposal one test",
+                Response = "10",
+                Source = null,
+                Author = null,
+                Created = DateTime.UtcNow,
+                Updated = DateTime.UtcNow
+            };
+
+            var proposal2 = new ProposalEntity
+            {
+                Id = Guid.NewGuid(),
+                Libelle = "Minimal proposal two test",
+                Response = "20",
+                Source = null,
+                Author = null,
+                Created = DateTime.UtcNow,
+                Updated = DateTime.UtcNow
+            };
+
+            _context.Proposals.Add(proposal1);
+            _context.Proposals.Add(proposal2);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/AdminProposal/Count");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var count = JsonSerializer.Deserialize<int>(
+                await response.Content.ReadAsStringAsync(),
+                _jsonOptions
+            );
+
+            Assert.Equal(2, count);
+        }
+
+        [Fact]
+        public async Task Count_WithAllFields_ShouldCountCorrectly()
+        {
+            // Arrange
+            var proposal1 = new ProposalEntity
+            {
+                Id = Guid.NewGuid(),
+                Libelle = "Complete proposal one test",
+                Response = "10",
+                Source = "https://source1.com",
+                Author = "Author One",
+                Created = DateTime.UtcNow,
+                Updated = DateTime.UtcNow
+            };
+
+            var proposal2 = new ProposalEntity
+            {
+                Id = Guid.NewGuid(),
+                Libelle = "Complete proposal two test",
+                Response = "20",
+                Source = "https://source2.com",
+                Author = "Author Two",
+                Created = DateTime.UtcNow,
+                Updated = DateTime.UtcNow
+            };
+
+            var proposal3 = new ProposalEntity
+            {
+                Id = Guid.NewGuid(),
+                Libelle = "Complete proposal three test",
+                Response = "30",
+                Source = "https://source3.com",
+                Author = "Author Three",
+                Created = DateTime.UtcNow,
+                Updated = DateTime.UtcNow
+            };
+
+            _context.Proposals.Add(proposal1);
+            _context.Proposals.Add(proposal2);
+            _context.Proposals.Add(proposal3);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/AdminProposal/Count");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var count = JsonSerializer.Deserialize<int>(
+                await response.Content.ReadAsStringAsync(),
+                _jsonOptions
+            );
+
+            Assert.Equal(3, count);
+        }
+
+        [Fact]
+        public async Task Count_CalledMultipleTimes_ShouldReturnConsistentResult()
+        {
+            // Arrange
+            var proposal1 = new ProposalEntity
+            {
+                Id = Guid.NewGuid(),
+                Libelle = "Proposal one test question",
+                Response = "10",
+                Created = DateTime.UtcNow,
+                Updated = DateTime.UtcNow
+            };
+
+            var proposal2 = new ProposalEntity
+            {
+                Id = Guid.NewGuid(),
+                Libelle = "Proposal two test question",
+                Response = "20",
+                Created = DateTime.UtcNow,
+                Updated = DateTime.UtcNow
+            };
+
+            _context.Proposals.Add(proposal1);
+            _context.Proposals.Add(proposal2);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response1 = await _client.GetAsync("/api/AdminProposal/Count");
+            var response2 = await _client.GetAsync("/api/AdminProposal/Count");
+            var response3 = await _client.GetAsync("/api/AdminProposal/Count");
+
+            // Assert
+            response1.EnsureSuccessStatusCode();
+            response2.EnsureSuccessStatusCode();
+            response3.EnsureSuccessStatusCode();
+
+            var count1 = JsonSerializer.Deserialize<int>(await response1.Content.ReadAsStringAsync(), _jsonOptions);
+            var count2 = JsonSerializer.Deserialize<int>(await response2.Content.ReadAsStringAsync(), _jsonOptions);
+            var count3 = JsonSerializer.Deserialize<int>(await response3.Content.ReadAsStringAsync(), _jsonOptions);
+
+            Assert.Equal(2, count1);
+            Assert.Equal(2, count2);
+            Assert.Equal(2, count3);
+        }
+
+        [Fact]
+        public async Task Count_ShouldReturnOkStatus()
+        {
+            // Arrange
+            var proposal = new ProposalEntity
+            {
+                Id = Guid.NewGuid(),
+                Libelle = "Test proposal question text",
+                Response = "42",
+                Created = DateTime.UtcNow,
+                Updated = DateTime.UtcNow
+            };
+
+            _context.Proposals.Add(proposal);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/AdminProposal/Count");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Count_ShouldReturnIntegerValue()
+        {
+            // Arrange
+            var proposal = new ProposalEntity
+            {
+                Id = Guid.NewGuid(),
+                Libelle = "Test proposal question text",
+                Response = "42",
+                Created = DateTime.UtcNow,
+                Updated = DateTime.UtcNow
+            };
+
+            _context.Proposals.Add(proposal);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/AdminProposal/Count");
+            var content = await response.Content.ReadAsStringAsync();
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var count = JsonSerializer.Deserialize<int>(content, _jsonOptions);
+            Assert.IsType<int>(count);
+            Assert.Equal(1, count);
+        }
+
+        [Fact]
+        public async Task Count_WithSpecialCharacters_ShouldCountCorrectly()
+        {
+            // Arrange
+            var proposal1 = new ProposalEntity
+            {
+                Id = Guid.NewGuid(),
+                Libelle = "Quelle est la température à l'équateur ?",
+                Response = "30",
+                Source = "https://météo-française.fr",
+                Author = "Auteur Ünîçödé",
+                Created = DateTime.UtcNow,
+                Updated = DateTime.UtcNow
+            };
+
+            var proposal2 = new ProposalEntity
+            {
+                Id = Guid.NewGuid(),
+                Libelle = "Normal proposal test question",
+                Response = "20",
+                Created = DateTime.UtcNow,
+                Updated = DateTime.UtcNow
+            };
+
+            _context.Proposals.Add(proposal1);
+            _context.Proposals.Add(proposal2);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/AdminProposal/Count");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var count = JsonSerializer.Deserialize<int>(
+                await response.Content.ReadAsStringAsync(),
+                _jsonOptions
+            );
+
+            Assert.Equal(2, count);
+        }
+
+        #endregion
     }
 }

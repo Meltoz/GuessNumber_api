@@ -26,5 +26,10 @@ namespace Infrastructure.Repositories
 
             return _mapper.Map<Proposal>(proposal);
         }
+
+        public async Task<int> CountProposal()
+        {
+            return await _dbSet.CountAsync();
+        }
     }
 }
