@@ -27,5 +27,10 @@ namespace Application.Services
 
             _proposalRepository.Delete(id);
         }
+
+        public async Task<int> Count()
+        {
+            return await _proposalRepository.CountProposal();
+        }
     }
 }

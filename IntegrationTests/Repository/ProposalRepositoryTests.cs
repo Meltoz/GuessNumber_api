@@ -591,5 +591,237 @@ namespace IntegrationTests.Repository
         }
 
         #endregion
+
+        #region CountProposal
+
+        [Fact]
+        public async Task CountProposal_WithNoProposals_ShouldReturnZero()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new ProposalRepository(context, mapper);
+
+            // Act
+            var result = await repository.CountProposal();
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+
+        [Fact]
+        public async Task CountProposal_WithSingleProposal_ShouldReturnOne()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new ProposalRepository(context, mapper);
+
+            var proposal = new Proposal("Test proposal testing", "42", null, null);
+            await repository.InsertAsync(proposal);
+
+            // Act
+            var result = await repository.CountProposal();
+
+            // Assert
+            Assert.Equal(1, result);
+        }
+
+        [Fact]
+        public async Task CountProposal_WithMultipleProposals_ShouldReturnCorrectCount()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new ProposalRepository(context, mapper);
+
+            var proposal1 = new Proposal("Proposal number one test", "10", null, null);
+            var proposal2 = new Proposal("Proposal number two test", "20", null, null);
+            var proposal3 = new Proposal("Proposal number three test", "30", null, null);
+
+            await repository.InsertAsync(proposal1);
+            await repository.InsertAsync(proposal2);
+            await repository.InsertAsync(proposal3);
+
+            // Act
+            var result = await repository.CountProposal();
+
+            // Assert
+            Assert.Equal(3, result);
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(5)]
+        [InlineData(10)]
+        [InlineData(25)]
+        public async Task CountProposal_WithDifferentCounts_ShouldReturnCorrectValue(int expectedCount)
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new ProposalRepository(context, mapper);
+
+            for (int i = 0; i < expectedCount; i++)
+            {
+                var proposal = new Proposal($"Proposal number testing {i}", $"{i}", null, null);
+                await repository.InsertAsync(proposal);
+            }
+
+            // Act
+            var result = await repository.CountProposal();
+
+            // Assert
+            Assert.Equal(expectedCount, result);
+        }
+
+        [Fact]
+        public async Task CountProposal_AfterInsert_ShouldIncrement()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new ProposalRepository(context, mapper);
+
+            var initialCount = await repository.CountProposal();
+
+            var proposal = new Proposal("New proposal test question", "100", null, null);
+            await repository.InsertAsync(proposal);
+
+            // Act
+            var newCount = await repository.CountProposal();
+
+            // Assert
+            Assert.Equal(initialCount + 1, newCount);
+        }
+
+        [Fact]
+        public async Task CountProposal_AfterDelete_ShouldDecrement()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new ProposalRepository(context, mapper);
+
+            var proposal1 = new Proposal("Proposal number one test", "10", null, null);
+            var proposal2 = new Proposal("Proposal number two test", "20", null, null);
+            var proposal3 = new Proposal("Proposal number three test", "30", null, null);
+
+            var inserted1 = await repository.InsertAsync(proposal1);
+            await repository.InsertAsync(proposal2);
+            await repository.InsertAsync(proposal3);
+
+            var countBefore = await repository.CountProposal();
+
+            // Act
+            repository.Delete(inserted1.Id);
+            var countAfter = await repository.CountProposal();
+
+            // Assert
+            Assert.Equal(3, countBefore);
+            Assert.Equal(2, countAfter);
+        }
+
+        [Fact]
+        public async Task CountProposal_AfterMultipleDeletes_ShouldReturnCorrectCount()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new ProposalRepository(context, mapper);
+
+            var proposal1 = new Proposal("Proposal number one test", "10", null, null);
+            var proposal2 = new Proposal("Proposal number two test", "20", null, null);
+            var proposal3 = new Proposal("Proposal number three test", "30", null, null);
+            var proposal4 = new Proposal("Proposal number four test", "40", null, null);
+            var proposal5 = new Proposal("Proposal number five test", "50", null, null);
+
+            var inserted1 = await repository.InsertAsync(proposal1);
+            var inserted2 = await repository.InsertAsync(proposal2);
+            await repository.InsertAsync(proposal3);
+            await repository.InsertAsync(proposal4);
+            await repository.InsertAsync(proposal5);
+
+            // Delete 2 proposals
+            repository.Delete(inserted1.Id);
+            repository.Delete(inserted2.Id);
+
+            // Act
+            var result = await repository.CountProposal();
+
+            // Assert
+            Assert.Equal(3, result);
+        }
+
+        [Fact]
+        public async Task CountProposal_WithMinimalFields_ShouldCountCorrectly()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new ProposalRepository(context, mapper);
+
+            var proposal1 = new Proposal("Minimal proposal one test", "10", null, null);
+            var proposal2 = new Proposal("Minimal proposal two test", "20", null, null);
+
+            await repository.InsertAsync(proposal1);
+            await repository.InsertAsync(proposal2);
+
+            // Act
+            var result = await repository.CountProposal();
+
+            // Assert
+            Assert.Equal(2, result);
+        }
+
+        [Fact]
+        public async Task CountProposal_WithAllFields_ShouldCountCorrectly()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new ProposalRepository(context, mapper);
+
+            var proposal1 = new Proposal("Complete proposal one test", "10", "https://source1.com", "Author One");
+            var proposal2 = new Proposal("Complete proposal two test", "20", "https://source2.com", "Author Two");
+            var proposal3 = new Proposal("Complete proposal three test", "30", "https://source3.com", "Author Three");
+
+            await repository.InsertAsync(proposal1);
+            await repository.InsertAsync(proposal2);
+            await repository.InsertAsync(proposal3);
+
+            // Act
+            var result = await repository.CountProposal();
+
+            // Assert
+            Assert.Equal(3, result);
+        }
+
+        [Fact]
+        public async Task CountProposal_CalledMultipleTimes_ShouldReturnConsistentResult()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new ProposalRepository(context, mapper);
+
+            var proposal1 = new Proposal("Proposal one test question", "10", null, null);
+            var proposal2 = new Proposal("Proposal two test question", "20", null, null);
+
+            await repository.InsertAsync(proposal1);
+            await repository.InsertAsync(proposal2);
+
+            // Act
+            var result1 = await repository.CountProposal();
+            var result2 = await repository.CountProposal();
+            var result3 = await repository.CountProposal();
+
+            // Assert
+            Assert.Equal(2, result1);
+            Assert.Equal(2, result2);
+            Assert.Equal(2, result3);
+        }
+
+        #endregion
     }
 }

@@ -19,5 +19,13 @@ namespace Web.Controllers.Admins
 
             return Ok(_mapper.Map<ProposalAdminVM>(nextProposal));
         }
+
+        [HttpGet]
+        public async Task<IActionResult> Count()
+        {
+            var proposalCount = await _proposalService.Count();
+
+            return Ok(proposalCount);
+        }
     }
 }

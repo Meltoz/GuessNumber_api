@@ -355,5 +355,120 @@ namespace UnitTests.Application
         }
 
         #endregion
+
+        #region Count
+
+        [Fact]
+        public async Task Count_ShouldCallRepositoryCountProposal()
+        {
+            // Arrange
+            _proposalRepositoryMock.Setup(r => r.CountProposal())
+                .ReturnsAsync(5);
+
+            // Act
+            await _service.Count();
+
+            // Assert
+            _proposalRepositoryMock.Verify(r => r.CountProposal(), Times.Once);
+        }
+
+        [Fact]
+        public async Task Count_ShouldReturnCorrectCount()
+        {
+            // Arrange
+            var expectedCount = 10;
+            _proposalRepositoryMock.Setup(r => r.CountProposal())
+                .ReturnsAsync(expectedCount);
+
+            // Act
+            var result = await _service.Count();
+
+            // Assert
+            Assert.Equal(expectedCount, result);
+        }
+
+        [Fact]
+        public async Task Count_WithNoProposals_ShouldReturnZero()
+        {
+            // Arrange
+            _proposalRepositoryMock.Setup(r => r.CountProposal())
+                .ReturnsAsync(0);
+
+            // Act
+            var result = await _service.Count();
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+
+        [Fact]
+        public async Task Count_WithSingleProposal_ShouldReturnOne()
+        {
+            // Arrange
+            _proposalRepositoryMock.Setup(r => r.CountProposal())
+                .ReturnsAsync(1);
+
+            // Act
+            var result = await _service.Count();
+
+            // Assert
+            Assert.Equal(1, result);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        [InlineData(5)]
+        [InlineData(10)]
+        [InlineData(100)]
+        [InlineData(1000)]
+        public async Task Count_WithDifferentCounts_ShouldReturnCorrectValue(int count)
+        {
+            // Arrange
+            _proposalRepositoryMock.Setup(r => r.CountProposal())
+                .ReturnsAsync(count);
+
+            // Act
+            var result = await _service.Count();
+
+            // Assert
+            Assert.Equal(count, result);
+        }
+
+        [Fact]
+        public async Task Count_CalledMultipleTimes_ShouldCallRepositoryEachTime()
+        {
+            // Arrange
+            _proposalRepositoryMock.Setup(r => r.CountProposal())
+                .ReturnsAsync(5);
+
+            // Act
+            await _service.Count();
+            await _service.Count();
+            await _service.Count();
+
+            // Assert
+            _proposalRepositoryMock.Verify(r => r.CountProposal(), Times.Exactly(3));
+        }
+
+        [Fact]
+        public async Task Count_CalledMultipleTimes_ShouldReturnConsistentResults()
+        {
+            // Arrange
+            _proposalRepositoryMock.Setup(r => r.CountProposal())
+                .ReturnsAsync(7);
+
+            // Act
+            var result1 = await _service.Count();
+            var result2 = await _service.Count();
+            var result3 = await _service.Count();
+
+            // Assert
+            Assert.Equal(7, result1);
+            Assert.Equal(7, result2);
+            Assert.Equal(7, result3);
+        }
+
+        #endregion
     }
 }
