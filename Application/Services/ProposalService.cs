@@ -32,5 +32,12 @@ namespace Application.Services
         {
             return await _proposalRepository.CountProposal();
         }
+
+        public async Task AddProposal(string libelle, string response, string? author, string? source)
+        {
+            var proposal = new Proposal(libelle, response, source, author);
+
+            await _proposalRepository.InsertAsync(proposal);
+        }
     }
 }
