@@ -1,7 +1,9 @@
 ﻿using Application.Exceptions;
 using Application.Interfaces.Repository;
 using Domain;
+using Domain.Enums;
 using Shared;
+using Shared.Enums;
 
 namespace Application.Services
 {
@@ -34,6 +36,22 @@ namespace Application.Services
                 throw new EntityNotFoundException(id);
 
             _reportRepository.Delete(report.Id);
+        }
+
+        public async Task<Report> CreateReport(string type, string context, string explanation, string? mail)
+        {
+            var successContext = EnumConverter.TryConvert(context, out ContextReport contextReport);
+            if (!successContext)
+                throw new ArgumentException("Error when converting context");
+
+            var successType = EnumConverter.TryConvert(type, out TypeReport typeReport);
+
+            if (!successType)
+                throw new ArgumentException("Error when converting type");
+
+            var report = new Report(typeReport, contextReport, explanation, mail);
+
+            return await _reportRepository.InsertAsync(report);
         }
     }
 }
