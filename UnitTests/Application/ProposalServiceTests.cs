@@ -470,5 +470,253 @@ namespace UnitTests.Application
         }
 
         #endregion
+
+        #region AddProposal
+
+        [Fact]
+        public async Task AddProposal_WithValidData_ShouldCallRepositoryInsertAsync()
+        {
+            // Arrange
+            var libelle = "Quelle est la population mondiale en 2024 ?";
+            var response = "8000000000";
+            var author = "World Bank";
+            var source = "https://www.worldbank.org";
+
+            // Act
+            await _service.AddProposal(libelle, response, author, source);
+
+            // Assert
+            _proposalRepositoryMock.Verify(r => r.InsertAsync(It.IsAny<Proposal>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task AddProposal_ShouldCreateProposalWithCorrectLibelle()
+        {
+            // Arrange
+            var libelle = "Combien de jours compte une année bissextile ?";
+            var response = "366";
+            var author = "Test Author";
+            var source = "https://test.com";
+
+            Proposal? capturedProposal = null;
+            _proposalRepositoryMock.Setup(r => r.InsertAsync(It.IsAny<Proposal>()))
+                .Callback<Proposal>(p => capturedProposal = p)
+                .ReturnsAsync((Proposal p) => p);
+
+            // Act
+            await _service.AddProposal(libelle, response, author, source);
+
+            // Assert
+            Assert.NotNull(capturedProposal);
+            Assert.Equal(libelle, capturedProposal.Libelle);
+        }
+
+        [Fact]
+        public async Task AddProposal_ShouldCreateProposalWithCorrectResponse()
+        {
+            // Arrange
+            var libelle = "Quelle est la vitesse de la lumière en km/s ?";
+            var response = "299792";
+            var author = "Physics";
+            var source = "https://physics.com";
+
+            Proposal? capturedProposal = null;
+            _proposalRepositoryMock.Setup(r => r.InsertAsync(It.IsAny<Proposal>()))
+                .Callback<Proposal>(p => capturedProposal = p)
+                .ReturnsAsync((Proposal p) => p);
+
+            // Act
+            await _service.AddProposal(libelle, response, author, source);
+
+            // Assert
+            Assert.NotNull(capturedProposal);
+            Assert.Equal(response, capturedProposal.Response);
+        }
+
+        [Fact]
+        public async Task AddProposal_WithNullAuthor_ShouldCreateProposal()
+        {
+            // Arrange
+            var libelle = "Quelle est la température d'ébullition de l'eau ?";
+            var response = "100";
+            string? author = null;
+            var source = "https://science.com";
+
+            Proposal? capturedProposal = null;
+            _proposalRepositoryMock.Setup(r => r.InsertAsync(It.IsAny<Proposal>()))
+                .Callback<Proposal>(p => capturedProposal = p)
+                .ReturnsAsync((Proposal p) => p);
+
+            // Act
+            await _service.AddProposal(libelle, response, author, source);
+
+            // Assert
+            Assert.NotNull(capturedProposal);
+            Assert.Equal(libelle, capturedProposal.Libelle);
+            Assert.Equal(response, capturedProposal.Response);
+            Assert.Null(capturedProposal.Author);
+        }
+
+        [Fact]
+        public async Task AddProposal_WithNullSource_ShouldCreateProposal()
+        {
+            // Arrange
+            var libelle = "Combien y a-t-il de continents sur Terre ?";
+            var response = "7";
+            var author = "Geography Teacher";
+            string? source = null;
+
+            Proposal? capturedProposal = null;
+            _proposalRepositoryMock.Setup(r => r.InsertAsync(It.IsAny<Proposal>()))
+                .Callback<Proposal>(p => capturedProposal = p)
+                .ReturnsAsync((Proposal p) => p);
+
+            // Act
+            await _service.AddProposal(libelle, response, author, source);
+
+            // Assert
+            Assert.NotNull(capturedProposal);
+            Assert.Equal(libelle, capturedProposal.Libelle);
+            Assert.Equal(response, capturedProposal.Response);
+            Assert.Null(capturedProposal.Source);
+        }
+
+        [Fact]
+        public async Task AddProposal_WithNullAuthorAndSource_ShouldCreateProposal()
+        {
+            // Arrange
+            var libelle = "Quelle est la distance Terre-Lune en kilomètres ?";
+            var response = "384400";
+            string? author = null;
+            string? source = null;
+
+            Proposal? capturedProposal = null;
+            _proposalRepositoryMock.Setup(r => r.InsertAsync(It.IsAny<Proposal>()))
+                .Callback<Proposal>(p => capturedProposal = p)
+                .ReturnsAsync((Proposal p) => p);
+
+            // Act
+            await _service.AddProposal(libelle, response, author, source);
+
+            // Assert
+            Assert.NotNull(capturedProposal);
+            Assert.Equal(libelle, capturedProposal.Libelle);
+            Assert.Equal(response, capturedProposal.Response);
+            Assert.Null(capturedProposal.Author);
+            Assert.Null(capturedProposal.Source);
+        }
+
+        [Fact]
+        public async Task AddProposal_WithAllFields_ShouldCreateCompleteProposal()
+        {
+            // Arrange
+            var libelle = "Quelle est la profondeur maximale de l'océan Pacifique ?";
+            var response = "10911";
+            var author = "Marine Research Institute";
+            var source = "https://oceanography.com";
+
+            Proposal? capturedProposal = null;
+            _proposalRepositoryMock.Setup(r => r.InsertAsync(It.IsAny<Proposal>()))
+                .Callback<Proposal>(p => capturedProposal = p)
+                .ReturnsAsync((Proposal p) => p);
+
+            // Act
+            await _service.AddProposal(libelle, response, author, source);
+
+            // Assert
+            Assert.NotNull(capturedProposal);
+            Assert.Equal(libelle, capturedProposal.Libelle);
+            Assert.Equal(response, capturedProposal.Response);
+            Assert.Equal(author, capturedProposal.Author);
+            Assert.Equal(source, capturedProposal.Source);
+        }
+
+        [Fact]
+        public async Task AddProposal_WithEmptyAuthor_ShouldCreateProposalWithNullAuthor()
+        {
+            // Arrange
+            var libelle = "Quel est le nombre de planètes dans le système solaire ?";
+            var response = "8";
+            var author = "";
+            var source = "https://astronomy.com";
+
+            Proposal? capturedProposal = null;
+            _proposalRepositoryMock.Setup(r => r.InsertAsync(It.IsAny<Proposal>()))
+                .Callback<Proposal>(p => capturedProposal = p)
+                .ReturnsAsync((Proposal p) => p);
+
+            // Act
+            await _service.AddProposal(libelle, response, author, source);
+
+            // Assert
+            Assert.NotNull(capturedProposal);
+            Assert.Null(capturedProposal.Author);
+        }
+
+        [Fact]
+        public async Task AddProposal_WithEmptySource_ShouldCreateProposalWithNullSource()
+        {
+            // Arrange
+            var libelle = "Quelle est la capitale du Japon ?";
+            var response = "13960000";
+            var author = "Geography Expert";
+            var source = "";
+
+            Proposal? capturedProposal = null;
+            _proposalRepositoryMock.Setup(r => r.InsertAsync(It.IsAny<Proposal>()))
+                .Callback<Proposal>(p => capturedProposal = p)
+                .ReturnsAsync((Proposal p) => p);
+
+            // Act
+            await _service.AddProposal(libelle, response, author, source);
+
+            // Assert
+            Assert.NotNull(capturedProposal);
+            Assert.Null(capturedProposal.Source);
+        }
+
+        [Fact]
+        public async Task AddProposal_CalledMultipleTimes_ShouldCallRepositoryEachTime()
+        {
+            // Arrange
+            var libelle1 = "Quelle est la hauteur de la Tour Eiffel ?";
+            var response1 = "330";
+            var libelle2 = "Quelle est la population de Tokyo ?";
+            var response2 = "14000000";
+
+            // Act
+            await _service.AddProposal(libelle1, response1, null, null);
+            await _service.AddProposal(libelle2, response2, null, null);
+
+            // Assert
+            _proposalRepositoryMock.Verify(r => r.InsertAsync(It.IsAny<Proposal>()), Times.Exactly(2));
+        }
+
+        [Theory]
+        [InlineData("0")]
+        [InlineData("1")]
+        [InlineData("999999")]
+        [InlineData("2147483647")]
+        public async Task AddProposal_WithDifferentResponseValues_ShouldCreateProposal(string response)
+        {
+            // Arrange
+            var libelle = "Quelle est la réponse à cette question ?";
+            var author = "Test";
+            var source = "https://test.com";
+
+            Proposal? capturedProposal = null;
+            _proposalRepositoryMock.Setup(r => r.InsertAsync(It.IsAny<Proposal>()))
+                .Callback<Proposal>(p => capturedProposal = p)
+                .ReturnsAsync((Proposal p) => p);
+
+            // Act
+            await _service.AddProposal(libelle, response, author, source);
+
+            // Assert
+            Assert.NotNull(capturedProposal);
+            Assert.Equal(response, capturedProposal.Response);
+        }
+
+        #endregion
     }
 }
