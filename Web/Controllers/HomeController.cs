@@ -7,10 +7,11 @@ namespace Web.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    public class HomeController(ProposalService ps, ReportService rs, IMapper m) : ControllerBase
+    public class HomeController(ProposalService ps, ReportService rs, ActualityService acs, IMapper m) : ControllerBase
     {
         private readonly ProposalService _proposalService = ps;
         private readonly ReportService _reportService = rs;
+        private readonly ActualityService _actualityService = acs;
         private readonly IMapper _mapper = m;
 
         [HttpPost]
@@ -33,6 +34,18 @@ namespace Web.Controllers
             await _reportService.CreateReport(report.Type, report.Context, report.Explanation, report.Mail);
 
             return Ok();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetActualities()
+        {
+            var actualities = await _actualityService.GetActiveActualities();
+
+
+            if(!actualities.Any())
+                return NotFound();
+
+            return Ok(_mapper.Map<IEnumerable<ActualityVM>>(actualities));
         }
     }
 }

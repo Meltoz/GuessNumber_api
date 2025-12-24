@@ -1178,5 +1178,276 @@ namespace IntegrationTests.Web
         }
 
         #endregion
+
+        #region GetActualities
+
+        [Fact]
+        public async Task GetActualities_WithActiveActualities_ReturnsOkWithActualities()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var actuality1 = new Infrastructure.Entities.ActualityEntity
+            {
+                Title = "Active Actuality 1",
+                Content = "Content of actuality 1",
+                StartPublish = now.AddDays(-5),
+                EndPublish = now.AddDays(5)
+            };
+            var actuality2 = new Infrastructure.Entities.ActualityEntity
+            {
+                Title = "Active Actuality 2",
+                Content = "Content of actuality 2",
+                StartPublish = now.AddDays(-2),
+                EndPublish = null
+            };
+
+            _context.Actualities.AddRange(actuality1, actuality2);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetActualities");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var actualities = JsonSerializer.Deserialize<List<ActualityVM>>(responseContent, _jsonOptions);
+
+            Assert.NotNull(actualities);
+            Assert.Equal(2, actualities.Count);
+        }
+
+        [Fact]
+        public async Task GetActualities_WithNoActiveActualities_ReturnsNotFound()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var futureActuality = new Infrastructure.Entities.ActualityEntity
+            {
+                Title = "Future Actuality",
+                Content = "Content",
+                StartPublish = now.AddDays(5),
+                EndPublish = now.AddDays(10)
+            };
+            var expiredActuality = new Infrastructure.Entities.ActualityEntity
+            {
+                Title = "Expired Actuality",
+                Content = "Content",
+                StartPublish = now.AddDays(-10),
+                EndPublish = now.AddDays(-1)
+            };
+
+            _context.Actualities.AddRange(futureActuality, expiredActuality);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetActualities");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetActualities_WithNoActualities_ReturnsNotFound()
+        {
+            // Arrange
+            // No actualities added to context
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetActualities");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetActualities_ReturnsCorrectlyFormattedDates()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var actuality = new Infrastructure.Entities.ActualityEntity
+            {
+                Title = "Test Actuality",
+                Content = "Test Content",
+                StartPublish = new DateTime(2025, 1, 15, 10, 30, 0, DateTimeKind.Utc),
+                EndPublish = new DateTime(2025, 12, 31, 23, 59, 59, DateTimeKind.Utc)
+            };
+
+            _context.Actualities.Add(actuality);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetActualities");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var actualities = JsonSerializer.Deserialize<List<ActualityVM>>(responseContent, _jsonOptions);
+
+            Assert.NotNull(actualities);
+            Assert.Single(actualities);
+            Assert.NotNull(actualities[0].StartDate);
+            Assert.NotNull(actualities[0].EndDate);
+        }
+
+        [Fact]
+        public async Task GetActualities_WithActualityWithoutEndDate_ReturnsNullEndDate()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var actuality = new Infrastructure.Entities.ActualityEntity
+            {
+                Title = "No End Date",
+                Content = "Content without end date",
+                StartPublish = now.AddDays(-5),
+                EndPublish = null
+            };
+
+            _context.Actualities.Add(actuality);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetActualities");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var actualities = JsonSerializer.Deserialize<List<ActualityVM>>(responseContent, _jsonOptions);
+
+            Assert.NotNull(actualities);
+            Assert.Single(actualities);
+            Assert.Equal("No End Date", actualities[0].Title);
+            Assert.Null(actualities[0].EndDate);
+        }
+
+        [Fact]
+        public async Task GetActualities_ReturnsOnlyActiveActualities_NotExpiredOrFuture()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var activeActuality = new Infrastructure.Entities.ActualityEntity
+            {
+                Title = "Active",
+                Content = "Active content",
+                StartPublish = now.AddDays(-5),
+                EndPublish = now.AddDays(5)
+            };
+            var futureActuality = new Infrastructure.Entities.ActualityEntity
+            {
+                Title = "Future",
+                Content = "Future content",
+                StartPublish = now.AddDays(2),
+                EndPublish = now.AddDays(10)
+            };
+            var expiredActuality = new Infrastructure.Entities.ActualityEntity
+            {
+                Title = "Expired",
+                Content = "Expired content",
+                StartPublish = now.AddDays(-10),
+                EndPublish = now.AddDays(-1)
+            };
+
+            _context.Actualities.AddRange(activeActuality, futureActuality, expiredActuality);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetActualities");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var actualities = JsonSerializer.Deserialize<List<ActualityVM>>(responseContent, _jsonOptions);
+
+            Assert.NotNull(actualities);
+            Assert.Single(actualities);
+            Assert.Equal("Active", actualities[0].Title);
+        }
+
+        [Fact]
+        public async Task GetActualities_WithMultipleActiveActualities_ReturnsAllActive()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var actuality1 = new Infrastructure.Entities.ActualityEntity
+            {
+                Title = "Active 1",
+                Content = "Content 1",
+                StartPublish = now.AddDays(-10),
+                EndPublish = now.AddDays(5)
+            };
+            var actuality2 = new Infrastructure.Entities.ActualityEntity
+            {
+                Title = "Active 2",
+                Content = "Content 2",
+                StartPublish = now.AddDays(-5),
+                EndPublish = now.AddDays(10)
+            };
+            var actuality3 = new Infrastructure.Entities.ActualityEntity
+            {
+                Title = "Active 3",
+                Content = "Content 3",
+                StartPublish = now.AddDays(-1),
+                EndPublish = null
+            };
+
+            _context.Actualities.AddRange(actuality1, actuality2, actuality3);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetActualities");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var actualities = JsonSerializer.Deserialize<List<ActualityVM>>(responseContent, _jsonOptions);
+
+            Assert.NotNull(actualities);
+            Assert.Equal(3, actualities.Count);
+
+            var titles = actualities.Select(a => a.Title).ToList();
+            Assert.Contains("Active 1", titles);
+            Assert.Contains("Active 2", titles);
+            Assert.Contains("Active 3", titles);
+        }
+
+        [Fact]
+        public async Task GetActualities_ReturnsCorrectMappedProperties()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var actuality = new Infrastructure.Entities.ActualityEntity
+            {
+                Title = "Test Title",
+                Content = "Test Content Value",
+                StartPublish = now.AddDays(-5),
+                EndPublish = now.AddDays(5)
+            };
+
+            _context.Actualities.Add(actuality);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetActualities");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var actualities = JsonSerializer.Deserialize<List<ActualityVM>>(responseContent, _jsonOptions);
+
+            Assert.NotNull(actualities);
+            Assert.Single(actualities);
+            Assert.Equal("Test Title", actualities[0].Title);
+            Assert.Equal("Test Content Value", actualities[0].Content);
+            Assert.NotNull(actualities[0].StartDate);
+            Assert.NotNull(actualities[0].EndDate);
+        }
+
+        #endregion
     }
 }

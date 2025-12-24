@@ -29,5 +29,14 @@ namespace Infrastructure.Repositories
 
             return await GetPaginateAsync(query, skip, take);
         }
+
+        public async Task<IEnumerable<Actuality>> GetActives()
+        {
+            var today = DateTime.UtcNow;
+            var actualities = await _dbSet.Where(a => a.StartPublish < today
+            && (!a.EndPublish.HasValue || a.EndPublish.Value > today)).ToListAsync();
+
+            return _mapper.Map<IEnumerable<Actuality>>(actualities);
+        }
     }
 }

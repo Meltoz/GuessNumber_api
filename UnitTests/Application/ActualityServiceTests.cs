@@ -316,10 +316,153 @@ namespace UnitTests.Application
             _actualityRepositoryMock
                 .Setup(r => r.GetByIdAsync(guid2))
                 .ReturnsAsync((Actuality)null);
-            
+
             // Act & Assert
             await Assert.ThrowsAsync<EntityNotFoundException>(() => _service.DeleteActualityAsync(guid2));
             _actualityRepositoryMock.Verify(r => r.Delete(It.IsAny<Guid>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GetActiveActuality_ShouldCallGetActivesOnRepository()
+        {
+            // Arrange
+            var actualities = new List<Actuality>
+            {
+                new Actuality(Guid.NewGuid(), "Active 1", "Content 1", DateTime.UtcNow.AddDays(-5), DateTime.UtcNow.AddDays(5)),
+                new Actuality(Guid.NewGuid(), "Active 2", "Content 2", DateTime.UtcNow.AddDays(-2), null)
+            };
+
+            _actualityRepositoryMock
+                .Setup(r => r.GetActives())
+                .ReturnsAsync(actualities);
+
+            // Act
+            var result = await _service.GetActiveActuality();
+
+            // Assert
+            _actualityRepositoryMock.Verify(r => r.GetActives(), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetActiveActuality_ShouldReturnActiveActualities()
+        {
+            // Arrange
+            var actuality1 = new Actuality(Guid.NewGuid(), "Active 1", "Content 1", DateTime.UtcNow.AddDays(-5), DateTime.UtcNow.AddDays(5));
+            var actuality2 = new Actuality(Guid.NewGuid(), "Active 2", "Content 2", DateTime.UtcNow.AddDays(-2), null);
+            var actualities = new List<Actuality> { actuality1, actuality2 };
+
+            _actualityRepositoryMock
+                .Setup(r => r.GetActives())
+                .ReturnsAsync(actualities);
+
+            // Act
+            var result = await _service.GetActiveActuality();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result.Count());
+            Assert.Contains(result, a => a.Title == "Active 1");
+            Assert.Contains(result, a => a.Title == "Active 2");
+        }
+
+        [Fact]
+        public async Task GetActiveActuality_ShouldReturnEmptyCollection_WhenNoActiveActualities()
+        {
+            // Arrange
+            var emptyList = new List<Actuality>();
+
+            _actualityRepositoryMock
+                .Setup(r => r.GetActives())
+                .ReturnsAsync(emptyList);
+
+            // Act
+            var result = await _service.GetActiveActuality();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result);
+            _actualityRepositoryMock.Verify(r => r.GetActives(), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetActiveActuality_ShouldReturnSameCollectionFromRepository()
+        {
+            // Arrange
+            var actualities = new List<Actuality>
+            {
+                new Actuality(Guid.NewGuid(), "Test", "Content", DateTime.UtcNow.AddDays(-5), DateTime.UtcNow.AddDays(5))
+            };
+
+            _actualityRepositoryMock
+                .Setup(r => r.GetActives())
+                .ReturnsAsync(actualities);
+
+            // Act
+            var result = await _service.GetActiveActuality();
+
+            // Assert
+            Assert.Same(actualities, result);
+        }
+
+        [Fact]
+        public async Task GetActiveActuality_ShouldThrow_WhenRepositoryThrows()
+        {
+            // Arrange
+            _actualityRepositoryMock
+                .Setup(r => r.GetActives())
+                .ThrowsAsync(new Exception("Repository error"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => _service.GetActiveActuality());
+            _actualityRepositoryMock.Verify(r => r.GetActives(), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetActiveActuality_ShouldReturnActualitiesWithCorrectProperties()
+        {
+            // Arrange
+            var guid = Guid.NewGuid();
+            var startDate = DateTime.UtcNow.AddDays(-5);
+            var endDate = DateTime.UtcNow.AddDays(5);
+            var actuality = new Actuality(guid, "Test Title", "Test Content", startDate, endDate);
+            var actualities = new List<Actuality> { actuality };
+
+            _actualityRepositoryMock
+                .Setup(r => r.GetActives())
+                .ReturnsAsync(actualities);
+
+            // Act
+            var result = await _service.GetActiveActuality();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result);
+
+            var firstActuality = result.First();
+            Assert.Equal("Test Title", firstActuality.Title);
+            Assert.Equal("Test Content", firstActuality.Content);
+            Assert.Equal(startDate, firstActuality.StartPublish);
+            Assert.Equal(endDate, firstActuality.EndPublish);
+        }
+
+        [Fact]
+        public async Task GetActiveActuality_ShouldHandleActualitiesWithNullEndDate()
+        {
+            // Arrange
+            var actuality = new Actuality(Guid.NewGuid(), "No End", "Content", DateTime.UtcNow.AddDays(-5), null);
+            var actualities = new List<Actuality> { actuality };
+
+            _actualityRepositoryMock
+                .Setup(r => r.GetActives())
+                .ReturnsAsync(actualities);
+
+            // Act
+            var result = await _service.GetActiveActuality();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result);
+            Assert.Null(result.First().EndPublish);
         }
     }
 }

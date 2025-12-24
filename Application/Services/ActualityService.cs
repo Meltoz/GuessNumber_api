@@ -54,5 +54,10 @@ namespace Application.Services
             _actualityRepository.Delete(idActuality);
 
         }
+
+        public async Task<IEnumerable<Actuality>> GetActiveActualities() 
+        {
+            return await _actualityRepository.GetActives();
+        }
     }
 }
