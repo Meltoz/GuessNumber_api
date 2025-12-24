@@ -4,7 +4,6 @@ using Domain;
 using Microsoft.AspNetCore.Mvc;
 using Shared;
 using Shared.Enums.Sorting;
-using Web.Constants;
 using Web.Converters;
 using Web.Extensions;
 using Web.ViewModels;

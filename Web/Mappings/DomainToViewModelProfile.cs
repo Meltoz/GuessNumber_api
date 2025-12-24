@@ -10,13 +10,16 @@ namespace Web.Mappings
     {
         public DomainToViewModelProfile()
         {
-            CreateMap<Actuality, ActualityAdminVM>()
+            CreateMap<Actuality, ActualityVM>()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.StartPublish.ToString("o")))
-                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.EndPublish.Value.ToString("o")));
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.EndPublish.HasValue ? src.EndPublish.Value.ToString("o") : null));
+
+            CreateMap<Actuality, ActualityAdminVM>()
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true));
 
             CreateMap<Communication, CommunicationAdminVM>()
-                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.StartDate.Value.ToString("o")))
-                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.EndDate.Value.ToString("o")));
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.StartDate.HasValue ? src.StartDate.Value.ToString("o") : null))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.EndDate.HasValue ? src.EndDate.Value.ToString("o") : null));
 
             CreateMap<Report, ReportVM>()
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.ToString()))
