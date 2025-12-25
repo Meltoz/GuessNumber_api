@@ -53,5 +53,12 @@ namespace Application.Services
 
             _communicationRepository.Delete(idActuality);
         }
+
+        public async Task<IEnumerable<Communication>> GetActiveCommunications()
+        {
+            var communications = await _communicationRepository.GetActives();
+
+            return communications;
+        }
     }
 }
