@@ -102,3 +102,8 @@ desktop.ini
 # ==========================
 *.exe
 /Web/appsettings.development.json
+
+# ==========================
+# Ressource Files
+# ==========================
+.claude/

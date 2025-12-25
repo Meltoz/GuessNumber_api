@@ -337,7 +337,7 @@ namespace UnitTests.Application
                 .ReturnsAsync(actualities);
 
             // Act
-            var result = await _service.GetActiveActuality();
+            var result = await _service.GetActiveActualities();
 
             // Assert
             _actualityRepositoryMock.Verify(r => r.GetActives(), Times.Once);
@@ -356,7 +356,7 @@ namespace UnitTests.Application
                 .ReturnsAsync(actualities);
 
             // Act
-            var result = await _service.GetActiveActuality();
+            var result = await _service.GetActiveActualities();
 
             // Assert
             Assert.NotNull(result);
@@ -376,7 +376,7 @@ namespace UnitTests.Application
                 .ReturnsAsync(emptyList);
 
             // Act
-            var result = await _service.GetActiveActuality();
+            var result = await _service.GetActiveActualities();
 
             // Assert
             Assert.NotNull(result);
@@ -398,7 +398,7 @@ namespace UnitTests.Application
                 .ReturnsAsync(actualities);
 
             // Act
-            var result = await _service.GetActiveActuality();
+            var result = await _service.GetActiveActualities();
 
             // Assert
             Assert.Same(actualities, result);
@@ -413,7 +413,7 @@ namespace UnitTests.Application
                 .ThrowsAsync(new Exception("Repository error"));
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _service.GetActiveActuality());
+            await Assert.ThrowsAsync<Exception>(() => _service.GetActiveActualities());
             _actualityRepositoryMock.Verify(r => r.GetActives(), Times.Once);
         }
 
@@ -432,7 +432,7 @@ namespace UnitTests.Application
                 .ReturnsAsync(actualities);
 
             // Act
-            var result = await _service.GetActiveActuality();
+            var result = await _service.GetActiveActualities();
 
             // Assert
             Assert.NotNull(result);
@@ -457,7 +457,7 @@ namespace UnitTests.Application
                 .ReturnsAsync(actualities);
 
             // Act
-            var result = await _service.GetActiveActuality();
+            var result = await _service.GetActiveActualities();
 
             // Assert
             Assert.NotNull(result);
