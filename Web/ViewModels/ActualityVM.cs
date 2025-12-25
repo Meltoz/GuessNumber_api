@@ -10,10 +10,5 @@ namespace Web.ViewModels
 
         [Required]
         public string Content { get; set; } = string.Empty;
-
-        [Required]
-        public string StartDate { get; set; } = string.Empty;
-
-        public string? EndDate { get; set; }
     }
 }

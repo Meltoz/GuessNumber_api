@@ -30,6 +30,16 @@ namespace Infrastructure.Repositories
             return await GetPaginateAsync(query, skip, take);
         }
 
+        public async Task<IEnumerable<Communication>> GetActives()
+        {
+            var today = DateTime.UtcNow;
+            var communications = await _dbSet.Where(c => c.Start < today &&
+            (!c.End.HasValue || c.End.Value > today))
+                .ToListAsync();
+
+            return _mapper.Map<IEnumerable<Communication>>(communications);
+        }
+
         private IQueryable<CommunicationEntity> SortQuery (IQueryable<CommunicationEntity> query, SortOption<SortCommunication> sortOption)
         {
             if (query is null)

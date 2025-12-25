@@ -983,5 +983,245 @@ namespace UnitTests.Application
         }
 
         #endregion
+
+        #region GetActiveCommunications Tests
+
+        [Fact]
+        public async Task GetActiveCommunications_ShouldCallGetActivesOnRepository()
+        {
+            // Arrange
+            var communications = new List<Communication>();
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetActives())
+                .ReturnsAsync(communications);
+
+            // Act
+            await _service.GetActiveCommunications();
+
+            // Assert
+            _communicationRepositoryMock.Verify(r => r.GetActives(), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetActiveCommunications_ShouldReturnCommunicationsFromRepository()
+        {
+            // Arrange
+            var communication1 = new Communication(
+                Guid.NewGuid(),
+                "Communication 1",
+                DateTime.UtcNow.AddDays(-5),
+                DateTime.UtcNow.AddDays(5)
+            );
+            var communication2 = new Communication(
+                Guid.NewGuid(),
+                "Communication 2",
+                DateTime.UtcNow.AddDays(-3),
+                null
+            );
+
+            var communications = new List<Communication> { communication1, communication2 };
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetActives())
+                .ReturnsAsync(communications);
+
+            // Act
+            var result = await _service.GetActiveCommunications();
+
+            // Assert
+            Assert.NotNull(result);
+            var resultList = result.ToList();
+            Assert.Equal(2, resultList.Count);
+            Assert.Contains(resultList, c => c.Content == "Communication 1");
+            Assert.Contains(resultList, c => c.Content == "Communication 2");
+        }
+
+        [Fact]
+        public async Task GetActiveCommunications_WhenRepositoryReturnsEmpty_ShouldReturnEmptyCollection()
+        {
+            // Arrange
+            var communications = new List<Communication>();
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetActives())
+                .ReturnsAsync(communications);
+
+            // Act
+            var result = await _service.GetActiveCommunications();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task GetActiveCommunications_WhenRepositoryReturnsSingleCommunication_ShouldReturnIt()
+        {
+            // Arrange
+            var communication = new Communication(
+                Guid.NewGuid(),
+                "Single Communication",
+                DateTime.UtcNow.AddDays(-1),
+                DateTime.UtcNow.AddDays(1)
+            );
+
+            var communications = new List<Communication> { communication };
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetActives())
+                .ReturnsAsync(communications);
+
+            // Act
+            var result = await _service.GetActiveCommunications();
+
+            // Assert
+            Assert.NotNull(result);
+            var resultList = result.ToList();
+            Assert.Single(resultList);
+            Assert.Equal("Single Communication", resultList[0].Content);
+        }
+
+        [Fact]
+        public async Task GetActiveCommunications_ShouldReturnExactCollectionFromRepository()
+        {
+            // Arrange
+            var communications = new List<Communication>
+            {
+                new Communication(Guid.NewGuid(), "Comm 1", DateTime.UtcNow, DateTime.UtcNow.AddDays(1)),
+                new Communication(Guid.NewGuid(), "Comm 2", DateTime.UtcNow, DateTime.UtcNow.AddDays(2)),
+                new Communication(Guid.NewGuid(), "Comm 3", DateTime.UtcNow, null)
+            };
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetActives())
+                .ReturnsAsync(communications);
+
+            // Act
+            var result = await _service.GetActiveCommunications();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(communications, result);
+        }
+
+        [Fact]
+        public async Task GetActiveCommunications_WhenRepositoryReturnsMultipleCommunications_ShouldReturnAll()
+        {
+            // Arrange
+            var communications = new List<Communication>();
+            for (int i = 1; i <= 10; i++)
+            {
+                communications.Add(new Communication(
+                    Guid.NewGuid(),
+                    $"Communication {i}",
+                    DateTime.UtcNow.AddDays(-i),
+                    DateTime.UtcNow.AddDays(i)
+                ));
+            }
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetActives())
+                .ReturnsAsync(communications);
+
+            // Act
+            var result = await _service.GetActiveCommunications();
+
+            // Assert
+            Assert.NotNull(result);
+            var resultList = result.ToList();
+            Assert.Equal(10, resultList.Count);
+        }
+
+        [Fact]
+        public async Task GetActiveCommunications_WithCommunicationsWithNullEndDate_ShouldReturnThem()
+        {
+            // Arrange
+            var communication1 = new Communication(
+                Guid.NewGuid(),
+                "With End Date",
+                DateTime.UtcNow.AddDays(-5),
+                DateTime.UtcNow.AddDays(5)
+            );
+            var communication2 = new Communication(
+                Guid.NewGuid(),
+                "Without End Date",
+                DateTime.UtcNow.AddDays(-3),
+                null
+            );
+
+            var communications = new List<Communication> { communication1, communication2 };
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetActives())
+                .ReturnsAsync(communications);
+
+            // Act
+            var result = await _service.GetActiveCommunications();
+
+            // Assert
+            Assert.NotNull(result);
+            var resultList = result.ToList();
+            Assert.Equal(2, resultList.Count);
+            Assert.Contains(resultList, c => c.Content == "With End Date" && c.EndDate.HasValue);
+            Assert.Contains(resultList, c => c.Content == "Without End Date" && !c.EndDate.HasValue);
+        }
+
+        [Fact]
+        public async Task GetActiveCommunications_ShouldOnlyCallRepositoryOnce()
+        {
+            // Arrange
+            var communications = new List<Communication>
+            {
+                new Communication(Guid.NewGuid(), "Test", DateTime.UtcNow, DateTime.UtcNow.AddDays(1))
+            };
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetActives())
+                .ReturnsAsync(communications);
+
+            // Act
+            await _service.GetActiveCommunications();
+
+            // Assert
+            _communicationRepositoryMock.Verify(r => r.GetActives(), Times.Once);
+            _communicationRepositoryMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task GetActiveCommunications_CalledMultipleTimes_ShouldCallRepositoryMultipleTimes()
+        {
+            // Arrange
+            var communications = new List<Communication>
+            {
+                new Communication(Guid.NewGuid(), "Test", DateTime.UtcNow, DateTime.UtcNow.AddDays(1))
+            };
+
+            _communicationRepositoryMock
+                .Setup(r => r.GetActives())
+                .ReturnsAsync(communications);
+
+            // Act
+            await _service.GetActiveCommunications();
+            await _service.GetActiveCommunications();
+            await _service.GetActiveCommunications();
+
+            // Assert
+            _communicationRepositoryMock.Verify(r => r.GetActives(), Times.Exactly(3));
+        }
+
+        [Fact]
+        public async Task GetActiveCommunications_WhenRepositoryThrowsException_ShouldPropagateException()
+        {
+            // Arrange
+            _communicationRepositoryMock
+                .Setup(r => r.GetActives())
+                .ThrowsAsync(new Exception("Repository error"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => _service.GetActiveCommunications());
+        }
+
+        #endregion
     }
 }

@@ -835,5 +835,372 @@ namespace IntegrationTests.Repository
         }
 
         #endregion
+
+        #region GetActives Tests
+
+        [Fact]
+        public async Task GetActives_WithActiveCommunications_ReturnsActiveCommunications()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new CommunicationRepository(context, mapper);
+
+            var now = DateTime.UtcNow;
+
+            // Active communication (Start in past, End in future)
+            var activeComm1 = new CommunicationEntity
+            {
+                Content = "Active Communication 1",
+                Start = now.AddDays(-5),
+                End = now.AddDays(5),
+                Created = now
+            };
+
+            // Active communication (Start in past, no End)
+            var activeComm2 = new CommunicationEntity
+            {
+                Content = "Active Communication 2",
+                Start = now.AddDays(-3),
+                End = null,
+                Created = now
+            };
+
+            // Future communication (should not be returned)
+            var futureComm = new CommunicationEntity
+            {
+                Content = "Future Communication",
+                Start = now.AddDays(2),
+                End = now.AddDays(10),
+                Created = now
+            };
+
+            // Expired communication (should not be returned)
+            var expiredComm = new CommunicationEntity
+            {
+                Content = "Expired Communication",
+                Start = now.AddDays(-10),
+                End = now.AddDays(-1),
+                Created = now
+            };
+
+            context.Communications.AddRange(activeComm1, activeComm2, futureComm, expiredComm);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.GetActives();
+
+            // Assert
+            Assert.NotNull(result);
+            var resultList = result.ToList();
+            Assert.Equal(2, resultList.Count);
+            Assert.Contains(resultList, c => c.Content == "Active Communication 1");
+            Assert.Contains(resultList, c => c.Content == "Active Communication 2");
+        }
+
+        [Fact]
+        public async Task GetActives_WithNoActiveCommunications_ReturnsEmpty()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new CommunicationRepository(context, mapper);
+
+            var now = DateTime.UtcNow;
+
+            // Future communication
+            var futureComm = new CommunicationEntity
+            {
+                Content = "Future Communication",
+                Start = now.AddDays(5),
+                End = now.AddDays(10),
+                Created = now
+            };
+
+            // Expired communication
+            var expiredComm = new CommunicationEntity
+            {
+                Content = "Expired Communication",
+                Start = now.AddDays(-10),
+                End = now.AddDays(-1),
+                Created = now
+            };
+
+            context.Communications.AddRange(futureComm, expiredComm);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.GetActives();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task GetActives_WithEmptyDatabase_ReturnsEmpty()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new CommunicationRepository(context, mapper);
+
+            // Act
+            var result = await repository.GetActives();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task GetActives_WithCommunicationStartingExactlyNow_ReturnsIt()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new CommunicationRepository(context, mapper);
+
+            var now = DateTime.UtcNow;
+
+            var commStartingNow = new CommunicationEntity
+            {
+                Content = "Starting Now",
+                Start = now,
+                End = now.AddDays(5),
+                Created = now
+            };
+
+            context.Communications.Add(commStartingNow);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.GetActives();
+
+            // Assert
+            Assert.NotNull(result);
+            var resultList = result.ToList();
+            Assert.Single(resultList);
+            Assert.Equal("Starting Now", resultList[0].Content);
+        }
+
+        [Fact]
+        public async Task GetActives_WithCommunicationEndingExactlyNow_DoesNotReturnIt()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new CommunicationRepository(context, mapper);
+
+            var now = DateTime.UtcNow;
+
+            var commEndingNow = new CommunicationEntity
+            {
+                Content = "Ending Now",
+                Start = now.AddDays(-5),
+                End = now,
+                Created = now
+            };
+
+            context.Communications.Add(commEndingNow);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.GetActives();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task GetActives_WithCommunicationWithNullEnd_ReturnsItIfStarted()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new CommunicationRepository(context, mapper);
+
+            var now = DateTime.UtcNow;
+
+            // Communication with no end date, started in the past
+            var noEndComm = new CommunicationEntity
+            {
+                Content = "No End Date",
+                Start = now.AddDays(-5),
+                End = null,
+                Created = now
+            };
+
+            context.Communications.Add(noEndComm);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.GetActives();
+
+            // Assert
+            Assert.NotNull(result);
+            var resultList = result.ToList();
+            Assert.Single(resultList);
+            Assert.Equal("No End Date", resultList[0].Content);
+        }
+
+        [Fact]
+        public async Task GetActives_WithCommunicationWithNullEndInFuture_DoesNotReturnIt()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new CommunicationRepository(context, mapper);
+
+            var now = DateTime.UtcNow;
+
+            // Communication with no end date, but starting in the future
+            var futureNoEndComm = new CommunicationEntity
+            {
+                Content = "Future No End",
+                Start = now.AddDays(5),
+                End = null,
+                Created = now
+            };
+
+            context.Communications.Add(futureNoEndComm);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.GetActives();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task GetActives_ReturnsCorrectlyMappedDomainObjects()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new CommunicationRepository(context, mapper);
+
+            var now = DateTime.UtcNow;
+
+            var activeComm = new CommunicationEntity
+            {
+                Content = "Test Active Communication",
+                Start = now.AddDays(-2),
+                End = now.AddDays(3),
+                Created = now
+            };
+
+            context.Communications.Add(activeComm);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.GetActives();
+
+            // Assert
+            Assert.NotNull(result);
+            var resultList = result.ToList();
+            Assert.Single(resultList);
+
+            var comm = resultList[0];
+            Assert.Equal("Test Active Communication", comm.Content);
+            Assert.NotNull(comm.StartDate);
+            Assert.NotNull(comm.EndDate);
+        }
+
+        [Fact]
+        public async Task GetActives_WithMultipleActiveCommunications_ReturnsAll()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new CommunicationRepository(context, mapper);
+
+            var now = DateTime.UtcNow;
+
+            for (int i = 1; i <= 5; i++)
+            {
+                context.Communications.Add(new CommunicationEntity
+                {
+                    Content = $"Active Communication {i}",
+                    Start = now.AddDays(-i),
+                    End = now.AddDays(i),
+                    Created = now
+                });
+            }
+
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.GetActives();
+
+            // Assert
+            Assert.NotNull(result);
+            var resultList = result.ToList();
+            Assert.Equal(5, resultList.Count);
+        }
+
+        [Fact]
+        public async Task GetActives_WithMixedActiveFutureAndExpired_ReturnsOnlyActive()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new CommunicationRepository(context, mapper);
+
+            var now = DateTime.UtcNow;
+
+            // Active
+            var active1 = new CommunicationEntity
+            {
+                Content = "Active 1",
+                Start = now.AddDays(-5),
+                End = now.AddDays(5),
+                Created = now
+            };
+
+            var active2 = new CommunicationEntity
+            {
+                Content = "Active 2",
+                Start = now.AddDays(-1),
+                End = null,
+                Created = now
+            };
+
+            // Future
+            var future = new CommunicationEntity
+            {
+                Content = "Future",
+                Start = now.AddDays(1),
+                End = now.AddDays(10),
+                Created = now
+            };
+
+            // Expired
+            var expired = new CommunicationEntity
+            {
+                Content = "Expired",
+                Start = now.AddDays(-10),
+                End = now.AddDays(-2),
+                Created = now
+            };
+
+            context.Communications.AddRange(active1, active2, future, expired);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.GetActives();
+
+            // Assert
+            Assert.NotNull(result);
+            var resultList = result.ToList();
+            Assert.Equal(2, resultList.Count);
+            Assert.All(resultList, comm =>
+                Assert.True(comm.Content == "Active 1" || comm.Content == "Active 2"));
+        }
+
+        #endregion
     }
 }

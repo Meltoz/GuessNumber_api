@@ -1288,8 +1288,6 @@ namespace IntegrationTests.Web
 
             Assert.NotNull(actualities);
             Assert.Single(actualities);
-            Assert.NotNull(actualities[0].StartDate);
-            Assert.NotNull(actualities[0].EndDate);
         }
 
         [Fact]
@@ -1320,7 +1318,6 @@ namespace IntegrationTests.Web
             Assert.NotNull(actualities);
             Assert.Single(actualities);
             Assert.Equal("No End Date", actualities[0].Title);
-            Assert.Null(actualities[0].EndDate);
         }
 
         [Fact]
@@ -1444,8 +1441,334 @@ namespace IntegrationTests.Web
             Assert.Single(actualities);
             Assert.Equal("Test Title", actualities[0].Title);
             Assert.Equal("Test Content Value", actualities[0].Content);
-            Assert.NotNull(actualities[0].StartDate);
-            Assert.NotNull(actualities[0].EndDate);
+        }
+
+        #endregion
+
+        #region GetCommunications
+
+        [Fact]
+        public async Task GetCommunications_WithActiveCommunications_ReturnsOkWithCommunicationContents()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var comm1 = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "First active communication",
+                Start = now.AddDays(-5),
+                End = now.AddDays(5)
+            };
+            var comm2 = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "Second active communication",
+                Start = now.AddDays(-2),
+                End = null
+            };
+
+            _context.Communications.AddRange(comm1, comm2);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetCommunications");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var communications = JsonSerializer.Deserialize<List<string>>(responseContent, _jsonOptions);
+
+            Assert.NotNull(communications);
+            Assert.Equal(2, communications.Count);
+            Assert.Contains("First active communication", communications);
+            Assert.Contains("Second active communication", communications);
+        }
+
+        [Fact]
+        public async Task GetCommunications_WithNoActiveCommunications_ReturnsNoContent()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var futureComm = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "Future communication",
+                Start = now.AddDays(5),
+                End = now.AddDays(10)
+            };
+            var expiredComm = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "Expired communication",
+                Start = now.AddDays(-10),
+                End = now.AddDays(-1)
+            };
+
+            _context.Communications.AddRange(futureComm, expiredComm);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetCommunications");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetCommunications_WithNoCommunications_ReturnsNoContent()
+        {
+            // Arrange
+            // No communications added to context
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetCommunications");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetCommunications_ReturnsOnlyContentStrings()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var comm = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "Test communication content",
+                Start = now.AddDays(-1),
+                End = now.AddDays(1)
+            };
+
+            _context.Communications.Add(comm);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetCommunications");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var communications = JsonSerializer.Deserialize<List<string>>(responseContent, _jsonOptions);
+
+            Assert.NotNull(communications);
+            Assert.Single(communications);
+            Assert.Equal("Test communication content", communications[0]);
+        }
+
+        [Fact]
+        public async Task GetCommunications_WithMultipleActiveCommunications_ReturnsAllContents()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var comm1 = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "Communication 1",
+                Start = now.AddDays(-10),
+                End = now.AddDays(5)
+            };
+            var comm2 = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "Communication 2",
+                Start = now.AddDays(-5),
+                End = now.AddDays(10)
+            };
+            var comm3 = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "Communication 3",
+                Start = now.AddDays(-1),
+                End = null
+            };
+
+            _context.Communications.AddRange(comm1, comm2, comm3);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetCommunications");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var communications = JsonSerializer.Deserialize<List<string>>(responseContent, _jsonOptions);
+
+            Assert.NotNull(communications);
+            Assert.Equal(3, communications.Count);
+
+            Assert.Contains("Communication 1", communications);
+            Assert.Contains("Communication 2", communications);
+            Assert.Contains("Communication 3", communications);
+        }
+
+        [Fact]
+        public async Task GetCommunications_ReturnsOnlyActiveCommunications_NotExpiredOrFuture()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var activeComm = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "Active",
+                Start = now.AddDays(-5),
+                End = now.AddDays(5)
+            };
+            var futureComm = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "Future",
+                Start = now.AddDays(2),
+                End = now.AddDays(10)
+            };
+            var expiredComm = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "Expired",
+                Start = now.AddDays(-10),
+                End = now.AddDays(-1)
+            };
+
+            _context.Communications.AddRange(activeComm, futureComm, expiredComm);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetCommunications");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var communications = JsonSerializer.Deserialize<List<string>>(responseContent, _jsonOptions);
+
+            Assert.NotNull(communications);
+            Assert.Single(communications);
+            Assert.Equal("Active", communications[0]);
+        }
+
+        [Fact]
+        public async Task GetCommunications_WithCommunicationWithNullEnd_ReturnsItIfStarted()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var comm = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "No end date communication",
+                Start = now.AddDays(-5),
+                End = null
+            };
+
+            _context.Communications.Add(comm);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetCommunications");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var communications = JsonSerializer.Deserialize<List<string>>(responseContent, _jsonOptions);
+
+            Assert.NotNull(communications);
+            Assert.Single(communications);
+            Assert.Equal("No end date communication", communications[0]);
+        }
+
+        [Fact]
+        public async Task GetCommunications_WithCommunicationStartingNow_ReturnsIt()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var comm = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "Starting now",
+                Start = now,
+                End = now.AddDays(5)
+            };
+
+            _context.Communications.Add(comm);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetCommunications");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var communications = JsonSerializer.Deserialize<List<string>>(responseContent, _jsonOptions);
+
+            Assert.NotNull(communications);
+            Assert.Single(communications);
+            Assert.Equal("Starting now", communications[0]);
+        }
+
+        [Fact]
+        public async Task GetCommunications_WithCommunicationEndingNow_DoesNotReturnIt()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var comm = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "Ending now",
+                Start = now.AddDays(-5),
+                End = now
+            };
+
+            _context.Communications.Add(comm);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetCommunications");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetCommunications_WithMixedActiveFutureAndExpired_ReturnsOnlyActiveContents()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+
+            var active1 = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "Active 1",
+                Start = now.AddDays(-5),
+                End = now.AddDays(5)
+            };
+
+            var active2 = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "Active 2",
+                Start = now.AddDays(-1),
+                End = null
+            };
+
+            var future = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "Future",
+                Start = now.AddDays(1),
+                End = now.AddDays(10)
+            };
+
+            var expired = new Infrastructure.Entities.CommunicationEntity
+            {
+                Content = "Expired",
+                Start = now.AddDays(-10),
+                End = now.AddDays(-2)
+            };
+
+            _context.Communications.AddRange(active1, active2, future, expired);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/Home/GetCommunications");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var communications = JsonSerializer.Deserialize<List<string>>(responseContent, _jsonOptions);
+
+            Assert.NotNull(communications);
+            Assert.Equal(2, communications.Count);
+            Assert.Contains("Active 1", communications);
+            Assert.Contains("Active 2", communications);
         }
 
         #endregion
