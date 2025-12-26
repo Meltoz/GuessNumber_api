@@ -17,15 +17,32 @@ namespace Web
             var env = builder.Environment.EnvironmentName;
             services.Configure<DatabaseConfiguration>(builder.Configuration.GetSection("ConnectionStrings"));
 
-
-
-
             if (env != "Testing")
             {
                 var connections = builder.Configuration
                     .GetSection("ConnectionStrings")
                     .Get<DatabaseConfiguration>() ?? throw new Exception("No configuration for database");
             }
+            var allowedOrigins = builder.Configuration
+                .GetSection("Cors:AllowedOrigins")
+                .Get<string[]>();
+
+            if (allowedOrigins is null || allowedOrigins.Length == 0)
+            {
+                throw new InvalidOperationException("CORS: AllowedOrigins est vide ou manquant");
+            }
+
+            services.AddCors(opt =>
+            {
+                opt.AddPolicy("front", policy =>
+                {
+                    policy.WithOrigins(allowedOrigins)
+                    .AllowCredentials()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .WithExposedHeaders(ApiConstants.TotalCountHeader);
+                });
+            });
 
             // Add services to the container.
 
@@ -39,19 +56,6 @@ namespace Web
             services.AddInfrastructure(builder.Configuration, env);
             services.AddApplication();
             services.AddAutoMapper(cfg => { }, typeof(ViewModelToDomainProfile), typeof(DomainToViewModelProfile));
-
-            services.AddCors(opt =>
-            {
-                opt.AddDefaultPolicy(policy =>
-                {
-                    policy.WithOrigins("http://localhost:3000")
-                                .AllowCredentials()
-                                .AllowAnyHeader()
-                                .AllowAnyMethod()
-                                .WithExposedHeaders(ApiConstants.TotalCountHeader);
-
-                });
-            });
 
 
             var app = builder.Build();
@@ -71,7 +75,7 @@ namespace Web
                 dbContext.Database.Migrate();
             }
 
-            app.UseCors();
+            app.UseCors("front");
 
             // Middlewares
             app.UseMiddleware<ExceptionHandlingMiddleware>();
