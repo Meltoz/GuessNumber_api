@@ -1,6 +1,5 @@
 ﻿using Application.Services;
 using AutoMapper;
-using Domain.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
 using Shared;
 using Shared.Enums.Sorting;
@@ -18,7 +17,7 @@ namespace Web.Controllers.Admins
         private readonly IMapper _mapper = m;
 
         [HttpGet]
-        public async Task<IActionResult> SearchUser(int pageIndex, int pageSize, string sort, string? search)
+        public async Task<IActionResult> SearchUser(int pageIndex, int pageSize, bool includeGuest, string sort, string? search)
         {
             if (pageIndex < 0 || pageSize < 1)
                 return BadRequest();
@@ -26,10 +25,22 @@ namespace Web.Controllers.Admins
             if (!GetSorting(sort, out var sortOptions))
                 return BadRequest();
 
-            var users = await _userService.Search(pageIndex, pageSize, sortOptions, search);
+            var users = await _userService.Search(pageIndex, pageSize, sortOptions, search, includeGuest);
 
             Response.AppendTotalCountHeader(users.TotalCount);
             return Ok(_mapper.Map<IEnumerable<UserAdminVM>>(users.Data)); 
+        }
+
+        [HttpGet]
+        [Route("{id}")]
+        public async Task<IActionResult> GetDetail([FromRoute]Guid id)
+        {
+            if (id == Guid.Empty)
+                return BadRequest();
+
+            var user = await _userService.GetDetail(id);
+
+            return Ok(_mapper.Map<UserAdminVM>(user));
         }
 
         [HttpGet]
@@ -40,6 +51,7 @@ namespace Web.Controllers.Admins
             return Ok(_mapper.Map<UserAdminVM>(user));
         }
 
+        #region private methods
 
         private bool GetSorting(string sort, out SortOption<SortUser> sortOption)
         {
@@ -57,6 +69,8 @@ namespace Web.Controllers.Admins
             sortOption = SortOptionFactory.Create<SortUser>(field, direction);
             return true;
         }
+
+        #endregion
 
     }
 }

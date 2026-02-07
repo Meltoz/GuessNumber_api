@@ -34,10 +34,12 @@ namespace Web.Mappings
             CreateMap<AuthUser, UserAdminVM>()
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Mail.ToString()))
                 .ForMember(dest => dest.Pseudo, opt => opt.MapFrom(src => src.Pseudo.ToString()))
-                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()));
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()))
+                .ForMember(dest => dest.IsAuth, opt => opt.MapFrom(src => true));
 
             CreateMap<GuestUser, UserAdminVM>()
-                .ForMember(dest => dest.Pseudo, opt => opt.MapFrom(src => src.Pseudo.ToString()));
+                .ForMember(dest => dest.Pseudo, opt => opt.MapFrom(src => src.Pseudo.ToString()))
+                .ForMember(dest => dest.IsAuth, opt => opt.MapFrom(src => false));
         }
     }
 }

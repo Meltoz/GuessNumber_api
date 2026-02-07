@@ -1,4 +1,5 @@
 using Domain.Enums;
+using Domain.User;
 using Infrastructure.Entities;
 using Infrastructure.Repositories;
 using Meltix.IntegrationTests;
@@ -222,7 +223,8 @@ namespace IntegrationTests.Repository
             // Assert
             Assert.NotNull(result);
             Assert.Equal(1, result.TotalCount);
-            Assert.Equal("admin@company.com", result.Data.First().Mail.ToString());
+            var authUser = Assert.IsType<AuthUser>(result.Data.First());
+            Assert.Equal("admin@company.com", authUser.Mail.ToString());
         }
 
         [Fact]
@@ -696,6 +698,31 @@ namespace IntegrationTests.Repository
 
             // Act
             var result = await repository.GetByIdAsync(Guid.NewGuid());
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_WithGuestUserId_ReturnsNull()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var guestEntity = new UserEntity
+            {
+                Pseudo = "GuestUser",
+                Avatar = "cat.jpg",
+                ExpiresAt = DateTime.UtcNow.AddDays(1),
+                Created = DateTime.UtcNow
+            };
+            context.Users.Add(guestEntity);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.GetByIdAsync(guestEntity.Id);
 
             // Assert
             Assert.Null(result);
