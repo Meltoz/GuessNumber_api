@@ -1270,8 +1270,8 @@ namespace IntegrationTests.Web
             {
                 Title = "Test Actuality",
                 Content = "Test Content",
-                StartPublish = new DateTime(2025, 1, 15, 10, 30, 0, DateTimeKind.Utc),
-                EndPublish = new DateTime(2025, 12, 31, 23, 59, 59, DateTimeKind.Utc)
+                StartPublish = DateTime.UtcNow.AddDays(-5),
+                EndPublish = DateTime.UtcNow.AddDays(5),
             };
 
             _context.Actualities.Add(actuality);

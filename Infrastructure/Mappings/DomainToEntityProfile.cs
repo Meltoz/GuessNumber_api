@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Domain;
 using Domain.Party;
+using Domain.User;
 using Infrastructure.Entities;
 
 namespace Infrastructure.Mappings
@@ -24,6 +25,14 @@ namespace Infrastructure.Mappings
                 .ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.Category.Id));
 
             CreateMap<Proposal, ProposalEntity>();
+
+            CreateMap<AuthUser, AuthUserEntity>()
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Mail.ToString()))
+                .ForMember(dest => dest.Password, opt => opt.MapFrom(src => src.Password.ToString()))
+                .ForMember(dest => dest.Pseudo, opt => opt.MapFrom(src => src.Pseudo.ToString()));
+
+            CreateMap<GuestUser, UserEntity>()
+                .ForMember(dest => dest.Pseudo, opt => opt.MapFrom(src => src.Pseudo.ToString()));
         }
 
     }

@@ -20,6 +20,10 @@ namespace Infrastructure
 
         public DbSet<ProposalEntity> Proposals { get; set; }
 
+        public DbSet<UserEntity> Users { get; set; }
+
+        public DbSet<AuthUserEntity> AuthUsers { get; set; }
+
 
         public GuessNumberContext()
         {
@@ -69,6 +73,13 @@ namespace Infrastructure
 
                 entity.Property(q => q.Type)
                 .HasConversion<int>();
+            });
+
+            modelBuilder.Entity<UserEntity>(entity =>
+            {
+                entity.HasDiscriminator<bool>("IsAuthUser")
+                .HasValue<UserEntity>(false)
+                .HasValue<AuthUserEntity>(true);
             });
 
         }

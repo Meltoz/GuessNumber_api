@@ -13,6 +13,7 @@ namespace Application
             services.AddScoped<CategoryService>();
             services.AddScoped<QuestionService>();
             services.AddScoped<ProposalService>();
+            services.AddScoped<UserService>();
 
 
             return services;
