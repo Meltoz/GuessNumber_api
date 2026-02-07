@@ -4,7 +4,7 @@ namespace Web.Extensions
 {
     public static class HttpResponseHeaderExtension
     {
-        public static void AddTotalCountHeader(this HttpResponse response, int totalCount)
+        public static void AppendTotalCountHeader(this HttpResponse response, int totalCount)
         {
             response.Headers.Append(ApiConstants.TotalCountHeader, totalCount.ToString());
         }

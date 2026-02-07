@@ -23,7 +23,7 @@ namespace Web.Controllers.Admins
 
             var questions = await _questionService.Search(pageIndex, pageSize, filter);
 
-            Response.AddTotalCountHeader(questions.TotalCount);
+            Response.AppendTotalCountHeader(questions.TotalCount);
             return Ok(_mapper.Map<IEnumerable<QuestionAdminVM>>(questions.Data));
         }
 

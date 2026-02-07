@@ -27,7 +27,7 @@ namespace Web
                 .GetSection("Cors:AllowedOrigins")
                 .Get<string[]>();
 
-            if (allowedOrigins is null || allowedOrigins.Length == 0)
+            if (allowedOrigins is null)
             {
                 throw new InvalidOperationException("CORS: AllowedOrigins est vide ou manquant");
             }

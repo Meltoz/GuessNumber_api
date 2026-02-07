@@ -28,7 +28,7 @@ namespace Web.Controllers.Admins
 
             var categories = await _categoryService.Search(pageIndex, pageSize, sortOptions, search);
 
-            Response.AddTotalCountHeader(categories.TotalCount);
+            Response.AppendTotalCountHeader(categories.TotalCount);
 
             return Ok(_mapper.Map<IEnumerable<CategoryAdminVM>>(categories.Data));
         }

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Domain;
 using Domain.Party;
+using Domain.User;
 using Web.ViewModels;
 using Web.ViewModels.Admin;
 
@@ -29,6 +30,14 @@ namespace Web.Mappings
             CreateMap<Question, QuestionAdminVM>();
 
             CreateMap<Proposal, ProposalAdminVM>();
+
+            CreateMap<AuthUser, UserAdminVM>()
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Mail.ToString()))
+                .ForMember(dest => dest.Pseudo, opt => opt.MapFrom(src => src.Pseudo.ToString()))
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()));
+
+            CreateMap<GuestUser, UserAdminVM>()
+                .ForMember(dest => dest.Pseudo, opt => opt.MapFrom(src => src.Pseudo.ToString()));
         }
     }
 }

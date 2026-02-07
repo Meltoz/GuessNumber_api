@@ -29,7 +29,7 @@ namespace Web.Controllers.Admins
             var sortoption = SortOptionFactory.Create<SortActuality>("created", "ascending");
             var t = await _actualityService.Search(pageIndex, pageSize, sortoption, "");
 
-            Response.AddTotalCountHeader(t.TotalCount);
+            Response.AppendTotalCountHeader(t.TotalCount);
 
             return Ok(_mapper.Map<IEnumerable<ActualityAdminVM>>(t.Data));
         }
@@ -92,7 +92,7 @@ namespace Web.Controllers.Admins
             var sortoption = SortOptionFactory.Create<SortCommunication>("active", "descending");
             var communications = await _communicationService.Search(pageIndex, pageSize, sortoption, message);
 
-            Response.AddTotalCountHeader(communications.TotalCount);
+            Response.AppendTotalCountHeader(communications.TotalCount);
 
             return Ok(_mapper.Map<IEnumerable<CommunicationAdminVM>>(communications.Data));
         }
@@ -155,7 +155,7 @@ namespace Web.Controllers.Admins
 
             var reports = await _reportService.GetAll(pageIndex, pageSize, search);
 
-            Response.AddTotalCountHeader(reports.TotalCount);
+            Response.AppendTotalCountHeader(reports.TotalCount);
 
             return Ok(_mapper.Map<IEnumerable<ReportVM>>(reports.Data));
         }
