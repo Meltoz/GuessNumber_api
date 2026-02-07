@@ -716,6 +716,210 @@ namespace IntegrationTests.Web
 
         #endregion
 
+        #region GetDetail Tests
+
+        [Fact]
+        public async Task GetDetail_WithValidAuthUserId_ShouldReturnOk()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "AuthDetail",
+                Avatar = "avatar.png",
+                Email = "auth@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/GetDetail/{user.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetDetail_WithValidAuthUserId_ShouldReturnCorrectData()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "JohnDoe",
+                Avatar = "avatar.png",
+                Email = "john@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.Admin,
+                Created = DateTime.UtcNow,
+                LastLogin = DateTime.UtcNow.AddDays(-1)
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/GetDetail/{user.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = JsonSerializer.Deserialize<UserAdminVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(result);
+            Assert.Equal(user.Id, result.Id);
+            Assert.Equal("JohnDoe", result.Pseudo);
+            Assert.Equal("avatar.png", result.Avatar);
+            Assert.Equal("john@example.com", result.Email);
+            Assert.Equal("Admin", result.Role);
+        }
+
+        [Fact]
+        public async Task GetDetail_WithValidGuestUserId_ShouldReturnOk()
+        {
+            // Arrange
+            var guest = new UserEntity
+            {
+                Pseudo = "GuestDetail",
+                Avatar = "cat.jpg",
+                ExpiresAt = DateTime.UtcNow.AddDays(1),
+                Created = DateTime.UtcNow
+            };
+            _context.Users.Add(guest);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/GetDetail/{guest.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetDetail_WithValidGuestUserId_ShouldReturnCorrectData()
+        {
+            // Arrange
+            var guest = new UserEntity
+            {
+                Pseudo = "Guest1234",
+                Avatar = "cat.jpg",
+                ExpiresAt = DateTime.UtcNow.AddDays(1),
+                Created = DateTime.UtcNow
+            };
+            _context.Users.Add(guest);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/GetDetail/{guest.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = JsonSerializer.Deserialize<UserAdminVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(result);
+            Assert.Equal(guest.Id, result.Id);
+            Assert.Equal("Guest1234", result.Pseudo);
+            Assert.Equal("cat.jpg", result.Avatar);
+            Assert.Null(result.Email);
+            Assert.Null(result.Role);
+        }
+
+        [Fact]
+        public async Task GetDetail_WithNonExistentId_ShouldReturnNotFound()
+        {
+            // Arrange
+            var nonExistentId = Guid.NewGuid();
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/GetDetail/{nonExistentId}");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetDetail_WithEmptyGuid_ShouldReturnBadRequest()
+        {
+            // Arrange
+            var emptyGuid = Guid.Empty;
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/GetDetail/{emptyGuid}");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetDetail_WithMultipleUsers_ShouldReturnCorrectOne()
+        {
+            // Arrange
+            var user1 = new AuthUserEntity
+            {
+                Pseudo = "User1",
+                Avatar = "avatar1.png",
+                Email = "user1@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            var user2 = new AuthUserEntity
+            {
+                Pseudo = "User2",
+                Avatar = "avatar2.png",
+                Email = "user2@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.Admin,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.AddRange(user1, user2);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/GetDetail/{user2.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = JsonSerializer.Deserialize<UserAdminVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(result);
+            Assert.Equal(user2.Id, result.Id);
+            Assert.Equal("User2", result.Pseudo);
+        }
+
+        [Fact]
+        public async Task GetDetail_ShouldReturnCorrectContentType()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "ContentTypeUser",
+                Avatar = "avatar.png",
+                Email = "content@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/GetDetail/{user.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+        }
+
+        #endregion
+
         #region Edge Cases
 
         [Fact]

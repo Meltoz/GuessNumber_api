@@ -10,10 +10,14 @@
 
         public string Email { get; set; }
 
+        public bool IsAuth { get; set; }
+
         public string Role { get; set; }
 
-        public DateTime LastChangePassword { get; set; }
+        public DateTime? LastChangePassword { get; set; }
 
-        public DateTime LastLogin { get; set; }
+        public DateTime? LastLogin { get; set; }
+
+        public DateTime? ExpiresAt { get; set; }
     }
 }

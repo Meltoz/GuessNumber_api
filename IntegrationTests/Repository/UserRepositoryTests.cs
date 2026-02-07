@@ -1,3 +1,4 @@
+using Domain.Enums;
 using Domain.User;
 using Infrastructure.Entities;
 using Infrastructure.Repositories;
@@ -139,6 +140,35 @@ namespace IntegrationTests.Repository
 
             // Assert
             Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_WithAuthUserId_ReturnsUser()
+        {
+            // Arrange - In TPH, Set<UserEntity>() includes AuthUserEntity (derived type)
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new UserRepository(context, mapper);
+
+            var authEntity = new AuthUserEntity
+            {
+                Pseudo = "AuthUser",
+                Avatar = "avatar.png",
+                Email = "auth@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            context.AuthUsers.Add(authEntity);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.GetByIdAsync(authEntity.Id);
+
+            // Assert - UserRepository finds auth users too (TPH behavior)
+            // GetDetail service handles priority by checking AuthUserRepository first
+            Assert.NotNull(result);
+            Assert.Equal(authEntity.Id, result.Id);
         }
 
         #endregion
