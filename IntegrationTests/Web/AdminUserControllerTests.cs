@@ -920,6 +920,574 @@ namespace IntegrationTests.Web
 
         #endregion
 
+        #region ChangeRole Tests - Cas Nominaux
+
+        [Fact]
+        public async Task ChangeRole_WithValidIdAndRole_ShouldReturnOk()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "test@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.PutAsync($"/api/AdminUser/ChangeRole/{user.Id}?role=Admin", null);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ChangeRole_FromUserToAdmin_ShouldReturnUpdatedUser()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "test@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.PutAsync($"/api/AdminUser/ChangeRole/{user.Id}?role=Admin", null);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = JsonSerializer.Deserialize<UserAdminVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(result);
+            Assert.Equal(user.Id, result.Id);
+            Assert.Equal("Admin", result.Role);
+        }
+
+        [Fact]
+        public async Task ChangeRole_FromAdminToUser_ShouldReturnUpdatedUser()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "AdminUser",
+                Avatar = "avatar.png",
+                Email = "admin@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.Admin,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.PutAsync($"/api/AdminUser/ChangeRole/{user.Id}?role=User", null);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = JsonSerializer.Deserialize<UserAdminVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(result);
+            Assert.Equal("User", result.Role);
+        }
+
+        [Fact]
+        public async Task ChangeRole_ShouldPersistRoleInDatabase()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "test@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.PutAsync($"/api/AdminUser/ChangeRole/{user.Id}?role=Admin", null);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            _context.Entry(user).Reload();
+            Assert.Equal(RoleUser.Admin, user.Role);
+        }
+
+        [Fact]
+        public async Task ChangeRole_ShouldPreserveOtherUserData()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "JohnDoe",
+                Avatar = "avatar.png",
+                Email = "john@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow,
+                LastLogin = DateTime.UtcNow.AddDays(-1)
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.PutAsync($"/api/AdminUser/ChangeRole/{user.Id}?role=Admin", null);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = JsonSerializer.Deserialize<UserAdminVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(result);
+            Assert.Equal("JohnDoe", result.Pseudo);
+            Assert.Equal("avatar.png", result.Avatar);
+            Assert.Equal("john@example.com", result.Email);
+            Assert.Equal("Admin", result.Role);
+        }
+
+        [Fact]
+        public async Task ChangeRole_WithCaseInsensitiveRole_ShouldWork()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "test@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.PutAsync($"/api/AdminUser/ChangeRole/{user.Id}?role=admin", null);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = JsonSerializer.Deserialize<UserAdminVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(result);
+            Assert.Equal("Admin", result.Role);
+        }
+
+        [Fact]
+        public async Task ChangeRole_ShouldReturnCorrectContentType()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "test@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.PutAsync($"/api/AdminUser/ChangeRole/{user.Id}?role=Admin", null);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+        }
+
+        #endregion
+
+        #region ChangeRole Tests - Cas d'Erreurs
+
+        [Fact]
+        public async Task ChangeRole_WithEmptyGuid_ShouldReturnBadRequest()
+        {
+            // Act
+            var response = await _client.PutAsync($"/api/AdminUser/ChangeRole/{Guid.Empty}?role=Admin", null);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ChangeRole_WithNonExistentId_ShouldReturnNotFound()
+        {
+            // Act
+            var response = await _client.PutAsync($"/api/AdminUser/ChangeRole/{Guid.NewGuid()}?role=Admin", null);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ChangeRole_WithInvalidRole_ShouldReturnInternalServerError()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "test@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.PutAsync($"/api/AdminUser/ChangeRole/{user.Id}?role=InvalidRole", null);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ChangeRole_WithMultipleUsers_ShouldOnlyChangeTargetUser()
+        {
+            // Arrange
+            var user1 = new AuthUserEntity
+            {
+                Pseudo = "User1",
+                Avatar = "avatar1.png",
+                Email = "user1@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            var user2 = new AuthUserEntity
+            {
+                Pseudo = "User2",
+                Avatar = "avatar2.png",
+                Email = "user2@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.AddRange(user1, user2);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.PutAsync($"/api/AdminUser/ChangeRole/{user1.Id}?role=Admin", null);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+
+            _context.Entry(user1).Reload();
+            _context.Entry(user2).Reload();
+            Assert.Equal(RoleUser.Admin, user1.Role);
+            Assert.Equal(RoleUser.User, user2.Role);
+        }
+
+        #endregion
+
+        #region ResetPassword Tests - Cas Nominaux
+
+        [Fact]
+        public async Task ResetPassword_WithValidIdAndPassword_ShouldReturnOk()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "test@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/ResetPassword/{user.Id}?newPassword=NewPassword1@");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldReturnUpdatedUser()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "test@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/ResetPassword/{user.Id}?newPassword=NewPassword1@");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = JsonSerializer.Deserialize<UserAdminVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(result);
+            Assert.Equal(user.Id, result.Id);
+            Assert.Equal("TestUser", result.Pseudo);
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldSetLastChangePassword()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "test@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            var beforeReset = DateTime.UtcNow;
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/ResetPassword/{user.Id}?newPassword=NewPassword1@");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = JsonSerializer.Deserialize<UserAdminVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(result);
+            Assert.NotNull(result.LastChangePassword);
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldPersistPasswordMustBeChangedInDatabase()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "test@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                PasswordMustBeChanged = false,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/ResetPassword/{user.Id}?newPassword=NewPassword1@");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            _context.Entry(user).Reload();
+            Assert.True(user.PasswordMustBeChanged);
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldPersistNewPasswordInDatabase()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "test@example.com",
+                Password = "oldhashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            var oldPassword = user.Password;
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/ResetPassword/{user.Id}?newPassword=NewPassword1@");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            _context.Entry(user).Reload();
+            Assert.NotEqual(oldPassword, user.Password);
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldPreserveOtherUserData()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "JohnDoe",
+                Avatar = "avatar.png",
+                Email = "john@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.Admin,
+                Created = DateTime.UtcNow,
+                LastLogin = DateTime.UtcNow.AddDays(-1)
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/ResetPassword/{user.Id}?newPassword=NewPassword1@");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = JsonSerializer.Deserialize<UserAdminVM>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+            Assert.NotNull(result);
+            Assert.Equal("JohnDoe", result.Pseudo);
+            Assert.Equal("avatar.png", result.Avatar);
+            Assert.Equal("john@example.com", result.Email);
+            Assert.Equal("Admin", result.Role);
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldReturnCorrectContentType()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "test@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/ResetPassword/{user.Id}?newPassword=NewPassword1@");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+        }
+
+        [Fact]
+        public async Task ResetPassword_WithMultipleUsers_ShouldOnlyChangeTargetUser()
+        {
+            // Arrange
+            var user1 = new AuthUserEntity
+            {
+                Pseudo = "User1",
+                Avatar = "avatar1.png",
+                Email = "user1@example.com",
+                Password = "hashedpassword1",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            var user2 = new AuthUserEntity
+            {
+                Pseudo = "User2",
+                Avatar = "avatar2.png",
+                Email = "user2@example.com",
+                Password = "hashedpassword2",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.AddRange(user1, user2);
+            await _context.SaveChangesAsync();
+
+            var user2OriginalPassword = user2.Password;
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/ResetPassword/{user1.Id}?newPassword=NewPassword1@");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+
+            _context.Entry(user1).Reload();
+            _context.Entry(user2).Reload();
+            Assert.True(user1.PasswordMustBeChanged);
+            Assert.False(user2.PasswordMustBeChanged);
+            Assert.Equal(user2OriginalPassword, user2.Password);
+        }
+
+        #endregion
+
+        #region ResetPassword Tests - Cas d'Erreurs
+
+        [Fact]
+        public async Task ResetPassword_WithEmptyGuid_ShouldReturnBadRequest()
+        {
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/ResetPassword/{Guid.Empty}?newPassword=NewPassword1@");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ResetPassword_WithNonExistentId_ShouldReturnNotFound()
+        {
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/ResetPassword/{Guid.NewGuid()}?newPassword=NewPassword1@");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ResetPassword_WithInvalidPassword_ShouldReturnInternalServerError()
+        {
+            // Arrange
+            var user = new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "test@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var response = await _client.GetAsync($"/api/AdminUser/ResetPassword/{user.Id}?newPassword=weak");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        }
+
+        #endregion
+
         #region Edge Cases
 
         [Fact]

@@ -1,6 +1,7 @@
 using Application.Exceptions;
 using Application.Interfaces.Repository;
 using Application.Services;
+using Domain.Enums;
 using Domain.User;
 using Moq;
 using Shared;
@@ -50,7 +51,7 @@ namespace UnitTests.Application
         public async Task Search_ShouldReturnPagedResultFromRepository()
         {
             // Arrange
-            var authUser = new AuthUser("TestUser", "avatar.png", "test@example.com", "Password1@");
+            var authUser = new AuthUser("TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
             var sortOption = new SortOption<SortUser>
             {
                 SortBy = SortUser.Pseudo,
@@ -559,7 +560,7 @@ namespace UnitTests.Application
         {
             // Arrange
             var id = Guid.NewGuid();
-            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@");
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
 
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
@@ -621,7 +622,7 @@ namespace UnitTests.Application
         {
             // Arrange
             var id = Guid.NewGuid();
-            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@");
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
 
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
@@ -641,7 +642,7 @@ namespace UnitTests.Application
         {
             // Arrange
             var id = Guid.NewGuid();
-            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@");
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
 
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
@@ -682,7 +683,7 @@ namespace UnitTests.Application
         {
             // Arrange
             var id = Guid.NewGuid();
-            var authUser = new AuthUser(id, "JohnDoe", "avatar.png", "john@example.com", "Password1@");
+            var authUser = new AuthUser(id, "JohnDoe", "avatar.png", "john@example.com", "Password1@", RoleUser.User);
 
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
@@ -761,7 +762,7 @@ namespace UnitTests.Application
         {
             // Arrange
             var id = Guid.NewGuid();
-            var authUser = new AuthUser(id, "AuthUser", "avatar.png", "auth@example.com", "Password1@");
+            var authUser = new AuthUser(id, "AuthUser", "avatar.png", "auth@example.com", "Password1@", RoleUser.User);
             var guestUser = new GuestUser(id, "GuestUser", "cat.jpg");
 
             var userRepoMock = new Mock<IUserRepository>();
@@ -777,6 +778,557 @@ namespace UnitTests.Application
             // Assert
             Assert.IsType<AuthUser>(result);
             Assert.Equal("AuthUser", result.Pseudo.Value);
+        }
+
+        #endregion
+
+        #region ChangeRole Tests
+
+        [Fact]
+        public async Task ChangeRole_ShouldCallAuthUserRepositoryGetByIdAsync()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>())).ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.ChangeRole(id, RoleUser.Admin);
+
+            // Assert
+            authUserRepoMock.Verify(r => r.GetByIdAsync(id), Times.Once);
+        }
+
+        [Fact]
+        public async Task ChangeRole_ShouldCallAuthUserRepositoryUpdateAsync()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>())).ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.ChangeRole(id, RoleUser.Admin);
+
+            // Assert
+            authUserRepoMock.Verify(r => r.UpdateAsync(It.IsAny<AuthUser>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ChangeRole_ShouldReturnUpdatedAuthUser()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>())).ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            var result = await service.ChangeRole(id, RoleUser.Admin);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<AuthUser>(result);
+            Assert.Equal(RoleUser.Admin, result.Role);
+        }
+
+        [Fact]
+        public async Task ChangeRole_ShouldChangeRoleOnDomainObject_BeforeCallingUpdate()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+            AuthUser capturedUser = null;
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>()))
+                .Callback<AuthUser>(u => capturedUser = u)
+                .ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.ChangeRole(id, RoleUser.Admin);
+
+            // Assert
+            Assert.NotNull(capturedUser);
+            Assert.Equal(RoleUser.Admin, capturedUser.Role);
+        }
+
+        [Fact]
+        public async Task ChangeRole_ShouldThrowEntityNotFoundException_WhenUserNotFound()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((AuthUser)null);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<EntityNotFoundException>(() => service.ChangeRole(id, RoleUser.Admin));
+        }
+
+        [Fact]
+        public async Task ChangeRole_ShouldNotCallUpdateAsync_WhenUserNotFound()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((AuthUser)null);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            try { await service.ChangeRole(id, RoleUser.Admin); } catch { }
+            authUserRepoMock.Verify(r => r.UpdateAsync(It.IsAny<AuthUser>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ChangeRole_FromUserToAdmin_ShouldReturnAdmin()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>())).ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            var result = await service.ChangeRole(id, RoleUser.Admin);
+
+            // Assert
+            Assert.Equal(RoleUser.Admin, result.Role);
+        }
+
+        [Fact]
+        public async Task ChangeRole_FromAdminToUser_ShouldReturnUser()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.Admin);
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>())).ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            var result = await service.ChangeRole(id, RoleUser.User);
+
+            // Assert
+            Assert.Equal(RoleUser.User, result.Role);
+        }
+
+        [Fact]
+        public async Task ChangeRole_ShouldNotCallUserRepository()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>())).ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.ChangeRole(id, RoleUser.Admin);
+
+            // Assert
+            userRepoMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task ChangeRole_ShouldThrow_WhenGetByIdAsyncThrows()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ThrowsAsync(new Exception("Database error"));
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => service.ChangeRole(id, RoleUser.Admin));
+        }
+
+        [Fact]
+        public async Task ChangeRole_ShouldThrow_WhenUpdateAsyncThrows()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>())).ThrowsAsync(new Exception("Database error"));
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => service.ChangeRole(id, RoleUser.Admin));
+        }
+
+        [Fact]
+        public async Task ChangeRole_ShouldPreserveUserData()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "JohnDoe", "avatar.png", "john@example.com", "Password1@", RoleUser.User);
+            AuthUser capturedUser = null;
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>()))
+                .Callback<AuthUser>(u => capturedUser = u)
+                .ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.ChangeRole(id, RoleUser.Admin);
+
+            // Assert
+            Assert.NotNull(capturedUser);
+            Assert.Equal(id, capturedUser.Id);
+            Assert.Equal("JohnDoe", capturedUser.Pseudo.Value);
+            Assert.Equal("john@example.com", capturedUser.Mail.ToString());
+            Assert.Equal("avatar.png", capturedUser.Avatar);
+        }
+
+        #endregion
+
+        #region ResetPassword Tests
+
+        [Fact]
+        public async Task ResetPassword_ShouldCallAuthUserRepositoryGetByIdAsync()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>())).ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.ResetPassword(id, "NewPassword1@");
+
+            // Assert
+            authUserRepoMock.Verify(r => r.GetByIdAsync(id), Times.Once);
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldCallAuthUserRepositoryUpdateAsync()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>())).ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.ResetPassword(id, "NewPassword1@");
+
+            // Assert
+            authUserRepoMock.Verify(r => r.UpdateAsync(It.IsAny<AuthUser>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldReturnUpdatedAuthUser()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>())).ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            var result = await service.ResetPassword(id, "NewPassword1@");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<AuthUser>(result);
+            Assert.Equal(id, result.Id);
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldChangePasswordOnDomainObject_BeforeCallingUpdate()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+            AuthUser capturedUser = null;
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>()))
+                .Callback<AuthUser>(u => capturedUser = u)
+                .ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.ResetPassword(id, "NewPassword1@");
+
+            // Assert
+            Assert.NotNull(capturedUser);
+            Assert.NotNull(capturedUser.LastChangePassword);
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldSetPasswordMustBeChangedToTrue()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+            Assert.False(authUser.PasswordMustBeChanged);
+            AuthUser capturedUser = null;
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>()))
+                .Callback<AuthUser>(u => capturedUser = u)
+                .ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.ResetPassword(id, "NewPassword1@");
+
+            // Assert
+            Assert.NotNull(capturedUser);
+            Assert.True(capturedUser.PasswordMustBeChanged);
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldSetLastChangePassword()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+            Assert.Null(authUser.LastChangePassword);
+
+            var beforeReset = DateTime.UtcNow;
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>())).ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            var result = await service.ResetPassword(id, "NewPassword1@");
+
+            // Assert
+            var afterReset = DateTime.UtcNow;
+            Assert.NotNull(result.LastChangePassword);
+            Assert.True(result.LastChangePassword >= beforeReset);
+            Assert.True(result.LastChangePassword <= afterReset);
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldThrowEntityNotFoundException_WhenUserNotFound()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((AuthUser)null);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<EntityNotFoundException>(() => service.ResetPassword(id, "NewPassword1@"));
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldNotCallUpdateAsync_WhenUserNotFound()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((AuthUser)null);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            try { await service.ResetPassword(id, "NewPassword1@"); } catch { }
+            authUserRepoMock.Verify(r => r.UpdateAsync(It.IsAny<AuthUser>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldNotCallUserRepository()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>())).ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.ResetPassword(id, "NewPassword1@");
+
+            // Assert
+            userRepoMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldPreserveUserData()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "JohnDoe", "avatar.png", "john@example.com", "Password1@", RoleUser.Admin);
+            AuthUser capturedUser = null;
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>()))
+                .Callback<AuthUser>(u => capturedUser = u)
+                .ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.ResetPassword(id, "NewPassword1@");
+
+            // Assert
+            Assert.NotNull(capturedUser);
+            Assert.Equal(id, capturedUser.Id);
+            Assert.Equal("JohnDoe", capturedUser.Pseudo.Value);
+            Assert.Equal("john@example.com", capturedUser.Mail.ToString());
+            Assert.Equal("avatar.png", capturedUser.Avatar);
+            Assert.Equal(RoleUser.Admin, capturedUser.Role);
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldThrow_WhenGetByIdAsyncThrows()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ThrowsAsync(new Exception("Database error"));
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => service.ResetPassword(id, "NewPassword1@"));
+        }
+
+        [Fact]
+        public async Task ResetPassword_ShouldThrow_WhenUpdateAsyncThrows()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+            authUserRepoMock.Setup(r => r.UpdateAsync(It.IsAny<AuthUser>())).ThrowsAsync(new Exception("Database error"));
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => service.ResetPassword(id, "NewPassword1@"));
+        }
+
+        [Fact]
+        public async Task ResetPassword_WithInvalidPassword_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => service.ResetPassword(id, "weak"));
+        }
+
+        [Fact]
+        public async Task ResetPassword_WithInvalidPassword_ShouldNotCallUpdateAsync()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(authUser);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            try { await service.ResetPassword(id, "weak"); } catch { }
+            authUserRepoMock.Verify(r => r.UpdateAsync(It.IsAny<AuthUser>()), Times.Never);
         }
 
         #endregion

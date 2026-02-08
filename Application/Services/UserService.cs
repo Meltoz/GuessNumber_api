@@ -1,5 +1,6 @@
 ﻿using Application.Exceptions;
 using Application.Interfaces.Repository;
+using Domain.Enums;
 using Domain.User;
 using Shared;
 using Shared.Enums.Sorting;
@@ -40,6 +41,31 @@ namespace Application.Services
                 return guestUser;
 
             throw new EntityNotFoundException(id);
+        }
+
+        public async Task<AuthUser> ChangeRole(Guid id, RoleUser newRole)
+        {
+            var authUser = await _authUserRepository.GetByIdAsync(id);
+
+            if (authUser is null)
+                throw new EntityNotFoundException(id);
+
+            authUser.ChangeRole(newRole);
+
+            return await _authUserRepository.UpdateAsync(authUser);
+        }
+
+        public async Task<AuthUser> ResetPassword(Guid id, string newPassword)
+        {
+            var authUser = await _authUserRepository.GetByIdAsync(id);
+
+            if(authUser is null)
+                throw new EntityNotFoundException(id);
+
+            authUser.ChangePassword(newPassword);
+            authUser.ChangePasswordNextTime();
+
+            return await _authUserRepository.UpdateAsync(authUser);
         }
     }
 }

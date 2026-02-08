@@ -617,7 +617,8 @@ namespace IntegrationTests.Repository
                 "TestUser",
                 "avatar.png",
                 "test@example.com",
-                "Password1@"
+                "Password1@",
+                RoleUser.User
             );
 
             // Act
@@ -642,7 +643,8 @@ namespace IntegrationTests.Repository
                 "PersistUser",
                 "avatar.png",
                 "persist@example.com",
-                "Password1@"
+                "Password1@",
+                RoleUser.User
             );
 
             // Act
@@ -759,6 +761,402 @@ namespace IntegrationTests.Repository
             // Assert
             var userInDb = context.AuthUsers.FirstOrDefault(u => u.Id == entity.Id);
             Assert.Null(userInDb);
+        }
+
+        #endregion
+
+        #region UpdateAsync Tests - ChangeRole
+
+        [Fact]
+        public async Task UpdateAsync_ChangeRoleFromUserToAdmin_ShouldPersistNewRole()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "TestUser",
+                "avatar.png",
+                "test@example.com",
+                "Password1@",
+                RoleUser.User
+            );
+
+            var inserted = await repository.InsertAsync(authUser);
+            Assert.Equal(RoleUser.User, inserted.Role);
+
+            // Act
+            inserted.ChangeRole(RoleUser.Admin);
+            var updated = await repository.UpdateAsync(inserted);
+
+            // Assert
+            Assert.NotNull(updated);
+            Assert.Equal(RoleUser.Admin, updated.Role);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ChangeRoleFromAdminToUser_ShouldPersistNewRole()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "AdminUser",
+                "avatar.png",
+                "admin@example.com",
+                "Password1@",
+                RoleUser.Admin
+            );
+
+            var inserted = await repository.InsertAsync(authUser);
+            Assert.Equal(RoleUser.Admin, inserted.Role);
+
+            // Act
+            inserted.ChangeRole(RoleUser.User);
+            var updated = await repository.UpdateAsync(inserted);
+
+            // Assert
+            Assert.NotNull(updated);
+            Assert.Equal(RoleUser.User, updated.Role);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ChangeRole_ShouldBeVerifiableViaGetById()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "TestUser",
+                "avatar.png",
+                "test@example.com",
+                "Password1@",
+                RoleUser.User
+            );
+
+            var inserted = await repository.InsertAsync(authUser);
+
+            // Act
+            inserted.ChangeRole(RoleUser.Admin);
+            await repository.UpdateAsync(inserted);
+
+            var retrieved = await repository.GetByIdAsync(inserted.Id);
+
+            // Assert
+            Assert.NotNull(retrieved);
+            Assert.Equal(RoleUser.Admin, retrieved.Role);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ChangeRole_ShouldPreserveOtherFields()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "TestUser",
+                "avatar.png",
+                "test@example.com",
+                "Password1@",
+                RoleUser.User
+            );
+
+            var inserted = await repository.InsertAsync(authUser);
+
+            // Act
+            inserted.ChangeRole(RoleUser.Admin);
+            var updated = await repository.UpdateAsync(inserted);
+
+            // Assert
+            Assert.Equal(inserted.Id, updated.Id);
+            Assert.Equal("TestUser", updated.Pseudo.Value);
+            Assert.Equal("avatar.png", updated.Avatar);
+            Assert.Equal("test@example.com", updated.Mail.ToString());
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ChangeRole_ShouldBePersistentInEntity()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var entity = new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "test@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            context.AuthUsers.Add(entity);
+            await context.SaveChangesAsync();
+
+            var domainUser = await repository.GetByIdAsync(entity.Id);
+            domainUser.ChangeRole(RoleUser.Admin);
+
+            // Act
+            await repository.UpdateAsync(domainUser);
+
+            // Assert
+            var entityInDb = context.AuthUsers.FirstOrDefault(u => u.Id == entity.Id);
+            Assert.NotNull(entityInDb);
+            Assert.Equal(RoleUser.Admin, entityInDb.Role);
+        }
+
+        [Fact]
+        public async Task InsertAsync_WithRoleAdmin_ShouldPersistRole()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "AdminUser",
+                "avatar.png",
+                "admin@example.com",
+                "Password1@",
+                RoleUser.Admin
+            );
+
+            // Act
+            var result = await repository.InsertAsync(authUser);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(RoleUser.Admin, result.Role);
+
+            var entityInDb = context.AuthUsers.FirstOrDefault(u => u.Id == result.Id);
+            Assert.NotNull(entityInDb);
+            Assert.Equal(RoleUser.Admin, entityInDb.Role);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_ShouldReturnCorrectRole()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var entity = new AuthUserEntity
+            {
+                Pseudo = "AdminUser",
+                Avatar = "avatar.png",
+                Email = "admin@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.Admin,
+                Created = DateTime.UtcNow
+            };
+            context.AuthUsers.Add(entity);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.GetByIdAsync(entity.Id);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(RoleUser.Admin, result.Role);
+        }
+
+        #endregion
+
+        #region UpdateAsync Tests - ResetPassword (ChangePassword + ChangePasswordNextTime)
+
+        [Fact]
+        public async Task UpdateAsync_ResetPassword_ShouldPersistNewPassword()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "TestUser",
+                "avatar.png",
+                "test@example.com",
+                "Password1@",
+                RoleUser.User
+            );
+
+            var inserted = await repository.InsertAsync(authUser);
+            var oldPasswordInDb = context.AuthUsers.First(u => u.Id == inserted.Id).Password;
+
+            // Act
+            inserted.ChangePassword("NewPassword1@");
+            inserted.ChangePasswordNextTime();
+            var updated = await repository.UpdateAsync(inserted);
+
+            // Assert
+            var entityInDb = context.AuthUsers.FirstOrDefault(u => u.Id == inserted.Id);
+            Assert.NotNull(entityInDb);
+            Assert.NotEqual(oldPasswordInDb, entityInDb.Password);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ResetPassword_ShouldPersistPasswordMustBeChanged()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "TestUser",
+                "avatar.png",
+                "test@example.com",
+                "Password1@",
+                RoleUser.User
+            );
+
+            var inserted = await repository.InsertAsync(authUser);
+
+            // Act
+            inserted.ChangePassword("NewPassword1@");
+            inserted.ChangePasswordNextTime();
+            var updated = await repository.UpdateAsync(inserted);
+
+            // Assert
+            Assert.True(updated.PasswordMustBeChanged);
+            var entityInDb = context.AuthUsers.FirstOrDefault(u => u.Id == inserted.Id);
+            Assert.NotNull(entityInDb);
+            Assert.True(entityInDb.PasswordMustBeChanged);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ResetPassword_ShouldPersistLastChangePassword()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "TestUser",
+                "avatar.png",
+                "test@example.com",
+                "Password1@",
+                RoleUser.User
+            );
+
+            var inserted = await repository.InsertAsync(authUser);
+            var beforeReset = DateTime.UtcNow;
+
+            // Act
+            inserted.ChangePassword("NewPassword1@");
+            inserted.ChangePasswordNextTime();
+            var updated = await repository.UpdateAsync(inserted);
+
+            // Assert
+            Assert.NotNull(updated.LastChangePassword);
+            var entityInDb = context.AuthUsers.FirstOrDefault(u => u.Id == inserted.Id);
+            Assert.NotNull(entityInDb);
+            Assert.NotNull(entityInDb.LastChangePassword);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ResetPassword_ShouldPreserveOtherFields()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "TestUser",
+                "avatar.png",
+                "test@example.com",
+                "Password1@",
+                RoleUser.Admin
+            );
+
+            var inserted = await repository.InsertAsync(authUser);
+
+            // Act
+            inserted.ChangePassword("NewPassword1@");
+            inserted.ChangePasswordNextTime();
+            var updated = await repository.UpdateAsync(inserted);
+
+            // Assert
+            Assert.Equal(inserted.Id, updated.Id);
+            Assert.Equal("TestUser", updated.Pseudo.Value);
+            Assert.Equal("avatar.png", updated.Avatar);
+            Assert.Equal("test@example.com", updated.Mail.ToString());
+            Assert.Equal(RoleUser.Admin, updated.Role);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ResetPassword_ShouldBeVerifiableViaGetById()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "TestUser",
+                "avatar.png",
+                "test@example.com",
+                "Password1@",
+                RoleUser.User
+            );
+
+            var inserted = await repository.InsertAsync(authUser);
+
+            // Act
+            inserted.ChangePassword("NewPassword1@");
+            inserted.ChangePasswordNextTime();
+            await repository.UpdateAsync(inserted);
+
+            var retrieved = await repository.GetByIdAsync(inserted.Id);
+
+            // Assert
+            Assert.NotNull(retrieved);
+            Assert.True(retrieved.PasswordMustBeChanged);
+            Assert.NotNull(retrieved.LastChangePassword);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ChangePassword_WithoutChangePasswordNextTime_ShouldSetPasswordMustBeChangedToFalse()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var entity = new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "test@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                PasswordMustBeChanged = true,
+                Created = DateTime.UtcNow
+            };
+            context.AuthUsers.Add(entity);
+            await context.SaveChangesAsync();
+
+            var domainUser = await repository.GetByIdAsync(entity.Id);
+
+            // Act
+            domainUser.ChangePassword("NewPassword1@");
+            await repository.UpdateAsync(domainUser);
+
+            // Assert
+            var entityInDb = context.AuthUsers.FirstOrDefault(u => u.Id == entity.Id);
+            Assert.NotNull(entityInDb);
+            Assert.False(entityInDb.PasswordMustBeChanged);
         }
 
         #endregion

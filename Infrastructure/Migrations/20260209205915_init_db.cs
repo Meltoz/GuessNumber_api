@@ -104,6 +104,7 @@ namespace Infrastructure.Migrations
                     Email = table.Column<string>(type: "text", nullable: true),
                     Password = table.Column<string>(type: "text", nullable: true),
                     Role = table.Column<int>(type: "integer", nullable: true),
+                    PasswordMustBeChanged = table.Column<bool>(type: "boolean", nullable: true),
                     LastLogin = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     LastChangePassword = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     Created = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),

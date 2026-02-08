@@ -1,5 +1,7 @@
 ﻿using Application.Services;
 using AutoMapper;
+using Domain.Enums;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Shared;
 using Shared.Enums.Sorting;
@@ -43,6 +45,34 @@ namespace Web.Controllers.Admins
             return Ok(_mapper.Map<UserAdminVM>(user));
         }
 
+        [HttpPut]
+        [Route("{id}")]
+        public async Task<IActionResult> ChangeRole([FromRoute] Guid id, string role)
+        {
+            if (id == Guid.Empty)
+                return BadRequest();
+
+            if (!Enum.TryParse<RoleUser>(role, true, out var userRole))
+                throw new InvalidOperationException();
+
+            var user = await _userService.ChangeRole(id, userRole);
+
+            return Ok(_mapper.Map<UserAdminVM>(user));
+
+        }
+
+        [HttpGet]
+        [Route("{id}")]
+        public async Task<IActionResult> ResetPassword([FromRoute]Guid id, string newPassword)
+        {
+            if (id == Guid.Empty)
+                return BadRequest();
+
+            var user = await _userService.ResetPassword(id, newPassword);
+
+            return Ok(_mapper.Map<UserAdminVM>(user));
+        }
+
         [HttpGet]
         public async Task<IActionResult> CreateUser()
         {
@@ -50,6 +80,8 @@ namespace Web.Controllers.Admins
 
             return Ok(_mapper.Map<UserAdminVM>(user));
         }
+
+        
 
         #region private methods
 

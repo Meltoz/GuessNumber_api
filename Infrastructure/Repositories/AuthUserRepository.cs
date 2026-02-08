@@ -13,6 +13,7 @@ namespace Infrastructure.Repositories
     {
         public async Task<PagedResult<User>> GetAll(int skip, int take, SortOption<SortUser> sortOption, string search, bool includeGuest = false)
         {
+            var searchLower = search?.ToLower();
             if (!includeGuest)
             {
                 var query = _dbSet
@@ -20,7 +21,7 @@ namespace Infrastructure.Repositories
                     .AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(search))
-                    query = query.Where(au => au.Pseudo.Contains(search) || au.Email.Contains(search));
+                    query = query.Where(au => au.Pseudo.ToLower().Contains(searchLower) || au.Email.ToLower().Contains(searchLower));
 
                 query = query.ApplySort(sortOption);
 
@@ -39,8 +40,8 @@ namespace Infrastructure.Repositories
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
-                allQuery = allQuery.Where(u => u.Pseudo.Contains(search)
-                    || (u is AuthUserEntity && ((AuthUserEntity)u).Email.Contains(search)));
+                allQuery = allQuery.Where(u => u.Pseudo.ToLower().Contains(searchLower)
+                    || (u is AuthUserEntity && ((AuthUserEntity)u).Email.ToLower().Contains(searchLower)));
 
             allQuery = ApplySortToUsers(allQuery, sortOption);
 
