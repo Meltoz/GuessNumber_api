@@ -21,16 +21,18 @@ namespace Domain.User
 
         }
 
-        public AuthUser(string pseudo, string avatar, string mail, string password): base(avatar, pseudo)
+        public AuthUser(string pseudo, string avatar, string mail, string password, RoleUser role): base(avatar, pseudo)
         {
             ChangeMail(mail);
             Password = Password.Create(password);
+            ChangeRole(role);
         }
 
-        public AuthUser(Guid id, string pseudo, string avatar, string mail, string password): base(id, avatar, pseudo)
+        public AuthUser(Guid id, string pseudo, string avatar, string mail, string password, RoleUser role): base(id, avatar, pseudo)
         {
             ChangeMail(mail);
            Password = Password.Create(password);
+            ChangeRole(role);
         }
 
         public void ChangeMail(string mail)
@@ -42,6 +44,11 @@ namespace Domain.User
         {
             Password = Password.Create(password);
             LastChangePassword = DateTime.UtcNow;
+        }
+
+        public void ChangeRole(RoleUser role)
+        {
+            Role = role;
         }
 
         public void Login()

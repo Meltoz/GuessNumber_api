@@ -18,7 +18,7 @@ namespace UnitTests.Domain
             var password = "Password1@";
 
             // Act
-            var authUser = new AuthUser(pseudo, avatar, mail, password);
+            var authUser = new AuthUser(pseudo, avatar, mail, password, RoleUser.User);
 
             // Assert
             Assert.Equal(Guid.Empty, authUser.Id);
@@ -44,7 +44,7 @@ namespace UnitTests.Domain
             var password = "Password1@";
 
             // Act
-            var authUser = new AuthUser(id, pseudo, avatar, mail, password);
+            var authUser = new AuthUser(id, pseudo, avatar, mail, password, RoleUser.User);
 
             // Assert
             Assert.Equal(id, authUser.Id);
@@ -66,7 +66,7 @@ namespace UnitTests.Domain
             var password = "Password1@";
 
             // Act
-            var authUser = new AuthUser(id, pseudo, avatar, mail, password);
+            var authUser = new AuthUser(id, pseudo, avatar, mail, password, RoleUser.User);
 
             // Assert
             Assert.Equal(Guid.Empty, authUser.Id);
@@ -82,7 +82,7 @@ namespace UnitTests.Domain
             var password = "Password1@";
 
             // Act
-            var authUser = new AuthUser(pseudo, avatar, mail, password);
+            var authUser = new AuthUser(pseudo, avatar, mail, password, RoleUser.User);
 
             // Assert
             Assert.Equal("test@example.com", authUser.Mail.ToString());
@@ -241,6 +241,132 @@ namespace UnitTests.Domain
 
         #endregion
 
+        #region ChangeRole Tests - Cas Nominaux
+
+        [Fact]
+        public void ChangeRole_ToAdmin_ShouldUpdateRole()
+        {
+            // Arrange
+            var authUser = CreateValidAuthUser();
+            Assert.Equal(RoleUser.User, authUser.Role);
+
+            // Act
+            authUser.ChangeRole(RoleUser.Admin);
+
+            // Assert
+            Assert.Equal(RoleUser.Admin, authUser.Role);
+        }
+
+        [Fact]
+        public void ChangeRole_ToUser_ShouldUpdateRole()
+        {
+            // Arrange
+            var authUser = new AuthUser("TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.Admin);
+
+            // Act
+            authUser.ChangeRole(RoleUser.User);
+
+            // Assert
+            Assert.Equal(RoleUser.User, authUser.Role);
+        }
+
+        [Fact]
+        public void ChangeRole_ToSameRole_ShouldKeepRole()
+        {
+            // Arrange
+            var authUser = CreateValidAuthUser();
+            var initialRole = authUser.Role;
+
+            // Act
+            authUser.ChangeRole(initialRole);
+
+            // Assert
+            Assert.Equal(initialRole, authUser.Role);
+        }
+
+        [Fact]
+        public void ChangeRole_MultipleTimes_ShouldAlwaysReflectLatestRole()
+        {
+            // Arrange
+            var authUser = CreateValidAuthUser();
+
+            // Act
+            authUser.ChangeRole(RoleUser.Admin);
+            authUser.ChangeRole(RoleUser.User);
+            authUser.ChangeRole(RoleUser.Admin);
+
+            // Assert
+            Assert.Equal(RoleUser.Admin, authUser.Role);
+        }
+
+        [Fact]
+        public void Constructor_WithRoleUser_ShouldSetRole()
+        {
+            // Arrange & Act
+            var authUser = new AuthUser("TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+
+            // Assert
+            Assert.Equal(RoleUser.User, authUser.Role);
+        }
+
+        [Fact]
+        public void Constructor_WithRoleAdmin_ShouldSetRole()
+        {
+            // Arrange & Act
+            var authUser = new AuthUser("TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.Admin);
+
+            // Assert
+            Assert.Equal(RoleUser.Admin, authUser.Role);
+        }
+
+        [Fact]
+        public void Constructor_WithId_WithRoleUser_ShouldSetRole()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+
+            // Act
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
+
+            // Assert
+            Assert.Equal(RoleUser.User, authUser.Role);
+            Assert.Equal(id, authUser.Id);
+        }
+
+        [Fact]
+        public void Constructor_WithId_WithRoleAdmin_ShouldSetRole()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+
+            // Act
+            var authUser = new AuthUser(id, "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.Admin);
+
+            // Assert
+            Assert.Equal(RoleUser.Admin, authUser.Role);
+            Assert.Equal(id, authUser.Id);
+        }
+
+        [Fact]
+        public void ChangeRole_ShouldNotAffectOtherProperties()
+        {
+            // Arrange
+            var authUser = CreateValidAuthUser();
+            var originalPseudo = authUser.Pseudo.Value;
+            var originalAvatar = authUser.Avatar;
+            var originalMail = authUser.Mail.ToString();
+
+            // Act
+            authUser.ChangeRole(RoleUser.Admin);
+
+            // Assert
+            Assert.Equal(originalPseudo, authUser.Pseudo.Value);
+            Assert.Equal(originalAvatar, authUser.Avatar);
+            Assert.Equal(originalMail, authUser.Mail.ToString());
+        }
+
+        #endregion
+
         #region Inherited Tests - ChangePseudo
 
         [Fact]
@@ -290,7 +416,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() =>
-                new AuthUser(pseudo, avatar, mail, password));
+                new AuthUser(pseudo, avatar, mail, password, RoleUser.User));
             Assert.Equal("Mail can't be empty", exception.Message);
         }
 
@@ -305,7 +431,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() =>
-                new AuthUser(pseudo, avatar, mail, password));
+                new AuthUser(pseudo, avatar, mail, password, RoleUser.User));
             Assert.Equal("Mail can't be empty", exception.Message);
         }
 
@@ -320,7 +446,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() =>
-                new AuthUser(pseudo, avatar, mail, password));
+                new AuthUser(pseudo, avatar, mail, password, RoleUser.User));
             Assert.Equal("Mail can't be empty", exception.Message);
         }
 
@@ -335,7 +461,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() =>
-                new AuthUser(pseudo, avatar, mail, password));
+                new AuthUser(pseudo, avatar, mail, password, RoleUser.User));
             Assert.Equal("L'adresse email n'est pas valide.", exception.Message);
         }
 
@@ -350,7 +476,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() =>
-                new AuthUser(pseudo, avatar, mail, password));
+                new AuthUser(pseudo, avatar, mail, password, RoleUser.User));
             Assert.Equal("L'adresse email n'est pas valide.", exception.Message);
         }
 
@@ -365,7 +491,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() =>
-                new AuthUser(pseudo, avatar, mail, password));
+                new AuthUser(pseudo, avatar, mail, password, RoleUser.User));
             Assert.Equal("L'adresse email n'est pas valide.", exception.Message);
         }
 
@@ -380,7 +506,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() =>
-                new AuthUser(pseudo, avatar, mail, password));
+                new AuthUser(pseudo, avatar, mail, password, RoleUser.User));
             Assert.Equal("Password can't be empty", exception.Message);
         }
 
@@ -395,7 +521,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() =>
-                new AuthUser(pseudo, avatar, mail, password));
+                new AuthUser(pseudo, avatar, mail, password, RoleUser.User));
             Assert.Equal("Password can't be empty", exception.Message);
         }
 
@@ -410,7 +536,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() =>
-                new AuthUser(pseudo, avatar, mail, password));
+                new AuthUser(pseudo, avatar, mail, password, RoleUser.User));
             Assert.Equal("Password can't be empty", exception.Message);
         }
 
@@ -425,7 +551,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() =>
-                new AuthUser(pseudo, avatar, mail, password));
+                new AuthUser(pseudo, avatar, mail, password, RoleUser.User));
             Assert.Equal("Password must be between 3 and 50 character", exception.Message);
         }
 
@@ -440,7 +566,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() =>
-                new AuthUser(pseudo, avatar, mail, password));
+                new AuthUser(pseudo, avatar, mail, password, RoleUser.User));
             Assert.Equal("Password must contains atleast a minus, a capital, a digit and a minimum of 8 characters", exception.Message);
         }
 
@@ -455,7 +581,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() =>
-                new AuthUser(pseudo, avatar, mail, password));
+                new AuthUser(pseudo, avatar, mail, password, RoleUser.User));
             Assert.Equal("Password must contains atleast a minus, a capital, a digit and a minimum of 8 characters", exception.Message);
         }
 
@@ -470,7 +596,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() =>
-                new AuthUser(pseudo, avatar, mail, password));
+                new AuthUser(pseudo, avatar, mail, password, RoleUser.User));
             Assert.Equal("Password must contains atleast a minus, a capital, a digit and a minimum of 8 characters", exception.Message);
         }
 
@@ -485,7 +611,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() =>
-                new AuthUser(pseudo, avatar, mail, password));
+                new AuthUser(pseudo, avatar, mail, password, RoleUser.User));
             Assert.Equal("Password must contains atleast a minus, a capital, a digit and a minimum of 8 characters", exception.Message);
         }
 
@@ -500,7 +626,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() =>
-                new AuthUser(pseudo, avatar, mail, password));
+                new AuthUser(pseudo, avatar, mail, password, RoleUser.User));
             Assert.Equal("Password must contains atleast a minus, a capital, a digit and a minimum of 8 characters", exception.Message);
         }
 
@@ -515,7 +641,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() =>
-                new AuthUser(pseudo, avatar, mail, password));
+                new AuthUser(pseudo, avatar, mail, password, RoleUser.User));
             Assert.Equal("Pseudo can't be empty", exception.Message);
         }
 
@@ -657,7 +783,7 @@ namespace UnitTests.Domain
 
         private AuthUser CreateValidAuthUser()
         {
-            return new AuthUser("TestUser", "avatar.png", "test@example.com", "Password1@");
+            return new AuthUser("TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
         }
 
         #endregion

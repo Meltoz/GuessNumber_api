@@ -1,5 +1,7 @@
 ﻿using Application.Services;
 using AutoMapper;
+using Domain.Enums;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Shared;
 using Shared.Enums.Sorting;
@@ -41,6 +43,22 @@ namespace Web.Controllers.Admins
             var user = await _userService.GetDetail(id);
 
             return Ok(_mapper.Map<UserAdminVM>(user));
+        }
+
+        [HttpPut]
+        [Route("{id}")]
+        public async Task<IActionResult> ChangeRole([FromRoute] Guid id, string role)
+        {
+            if (id == Guid.Empty)
+                return BadRequest();
+
+            if (!Enum.TryParse<RoleUser>(role, true, out var userRole))
+                throw new InvalidOperationException();
+
+            var user = await _userService.ChangeRole(id, userRole);
+
+            return Ok(_mapper.Map<UserAdminVM>(user));
+
         }
 
         [HttpGet]
