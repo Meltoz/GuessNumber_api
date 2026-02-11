@@ -10,8 +10,12 @@ namespace Infrastructure.Entities
 
         public RoleUser Role { get; set; }
 
+        public bool PasswordMustBeChanged { get; set; }
+
         public DateTime? LastLogin { get; set; }
 
         public DateTime? LastChangePassword { get; set; }
+
+
     }
 }

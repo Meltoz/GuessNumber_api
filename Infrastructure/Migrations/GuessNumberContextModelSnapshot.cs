@@ -261,6 +261,9 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("PasswordMustBeChanged")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 

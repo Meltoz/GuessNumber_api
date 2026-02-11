@@ -31,6 +31,7 @@ namespace UnitTests.Domain
             Assert.Null(authUser.LastChangePassword);
             Assert.Null(authUser.LastLogin);
             Assert.Equal(RoleUser.User, authUser.Role);
+            Assert.False(authUser.PasswordMustBeChanged);
         }
 
         [Fact]
@@ -53,6 +54,7 @@ namespace UnitTests.Domain
             Assert.Equal(pseudo, authUser.Pseudo.Value);
             Assert.NotNull(authUser.Mail);
             Assert.NotNull(authUser.Password);
+            Assert.False(authUser.PasswordMustBeChanged);
         }
 
         [Fact]
@@ -181,6 +183,129 @@ namespace UnitTests.Domain
             Assert.NotNull(firstChangeTime);
             Assert.NotNull(secondChangeTime);
             Assert.True(secondChangeTime > firstChangeTime);
+        }
+
+        #endregion
+
+        #region ChangePassword Tests - PasswordMustBeChanged
+
+        [Fact]
+        public void ChangePassword_ShouldSetPasswordMustBeChangedToFalse()
+        {
+            // Arrange
+            var authUser = CreateValidAuthUser();
+            authUser.ChangePasswordNextTime();
+            Assert.True(authUser.PasswordMustBeChanged);
+
+            // Act
+            authUser.ChangePassword("NewPassword1@");
+
+            // Assert
+            Assert.False(authUser.PasswordMustBeChanged);
+        }
+
+        [Fact]
+        public void ChangePassword_WhenPasswordMustBeChangedIsFalse_ShouldKeepItFalse()
+        {
+            // Arrange
+            var authUser = CreateValidAuthUser();
+            Assert.False(authUser.PasswordMustBeChanged);
+
+            // Act
+            authUser.ChangePassword("NewPassword1@");
+
+            // Assert
+            Assert.False(authUser.PasswordMustBeChanged);
+        }
+
+        #endregion
+
+        #region ChangePasswordNextTime Tests - Cas Nominaux
+
+        [Fact]
+        public void ChangePasswordNextTime_ShouldSetPasswordMustBeChangedToTrue()
+        {
+            // Arrange
+            var authUser = CreateValidAuthUser();
+            Assert.False(authUser.PasswordMustBeChanged);
+
+            // Act
+            authUser.ChangePasswordNextTime();
+
+            // Assert
+            Assert.True(authUser.PasswordMustBeChanged);
+        }
+
+        [Fact]
+        public void ChangePasswordNextTime_CalledMultipleTimes_ShouldKeepPasswordMustBeChangedTrue()
+        {
+            // Arrange
+            var authUser = CreateValidAuthUser();
+
+            // Act
+            authUser.ChangePasswordNextTime();
+            authUser.ChangePasswordNextTime();
+
+            // Assert
+            Assert.True(authUser.PasswordMustBeChanged);
+        }
+
+        [Fact]
+        public void ChangePasswordNextTime_ShouldNotAffectOtherProperties()
+        {
+            // Arrange
+            var authUser = CreateValidAuthUser();
+            var originalPseudo = authUser.Pseudo.Value;
+            var originalAvatar = authUser.Avatar;
+            var originalMail = authUser.Mail.ToString();
+            var originalRole = authUser.Role;
+            var originalPassword = authUser.Password;
+            var originalLastChangePassword = authUser.LastChangePassword;
+            var originalLastLogin = authUser.LastLogin;
+
+            // Act
+            authUser.ChangePasswordNextTime();
+
+            // Assert
+            Assert.Equal(originalPseudo, authUser.Pseudo.Value);
+            Assert.Equal(originalAvatar, authUser.Avatar);
+            Assert.Equal(originalMail, authUser.Mail.ToString());
+            Assert.Equal(originalRole, authUser.Role);
+            Assert.Equal(originalPassword, authUser.Password);
+            Assert.Equal(originalLastChangePassword, authUser.LastChangePassword);
+            Assert.Equal(originalLastLogin, authUser.LastLogin);
+        }
+
+        [Fact]
+        public void ChangePasswordNextTime_ThenChangePassword_ShouldResetPasswordMustBeChanged()
+        {
+            // Arrange
+            var authUser = CreateValidAuthUser();
+
+            // Act
+            authUser.ChangePasswordNextTime();
+            Assert.True(authUser.PasswordMustBeChanged);
+
+            authUser.ChangePassword("NewPassword1@");
+
+            // Assert
+            Assert.False(authUser.PasswordMustBeChanged);
+        }
+
+        [Fact]
+        public void ChangePassword_ThenChangePasswordNextTime_ShouldSetPasswordMustBeChangedToTrue()
+        {
+            // Arrange
+            var authUser = CreateValidAuthUser();
+
+            // Act
+            authUser.ChangePassword("NewPassword1@");
+            Assert.False(authUser.PasswordMustBeChanged);
+
+            authUser.ChangePasswordNextTime();
+
+            // Assert
+            Assert.True(authUser.PasswordMustBeChanged);
         }
 
         #endregion

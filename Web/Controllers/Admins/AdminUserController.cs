@@ -62,12 +62,26 @@ namespace Web.Controllers.Admins
         }
 
         [HttpGet]
+        [Route("{id}")]
+        public async Task<IActionResult> ResetPassword([FromRoute]Guid id, string newPassword)
+        {
+            if (id == Guid.Empty)
+                return BadRequest();
+
+            var user = await _userService.ResetPassword(id, newPassword);
+
+            return Ok(_mapper.Map<UserAdminVM>(user));
+        }
+
+        [HttpGet]
         public async Task<IActionResult> CreateUser()
         {
             var user = await _userService.CreateDefaultUser();
 
             return Ok(_mapper.Map<UserAdminVM>(user));
         }
+
+        
 
         #region private methods
 

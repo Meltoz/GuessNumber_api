@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(GuessNumberContext))]
-    [Migration("20260207084253_init_db")]
+    [Migration("20260209205915_init_db")]
     partial class init_db
     {
         /// <inheritdoc />
@@ -263,6 +263,9 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("PasswordMustBeChanged")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("Role")
                         .HasColumnType("integer");
