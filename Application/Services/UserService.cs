@@ -67,5 +67,6 @@ namespace Application.Services
 
             return await _authUserRepository.UpdateAsync(authUser);
         }
+
     }
 }

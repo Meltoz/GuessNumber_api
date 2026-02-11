@@ -56,6 +56,11 @@ namespace Domain.User
             Role = role;
         }
 
+        public void ChangeRole(RoleUser role)
+        {
+            Role = role;
+        }
+
         public void Login()
         {
             LastLogin = DateTime.UtcNow;
