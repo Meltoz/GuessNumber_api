@@ -347,126 +347,61 @@ namespace UnitTests.Domain.ValueObjects
 
         #endregion
 
-        #region Create Tests - Cas Limites et Erreurs
+        #region Create Tests - Cas Limites et Erreurs (Null/Empty)
 
-        [Fact]
-        public void Create_WithNullMail_ShouldThrowArgumentException()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData("\t")]
+        [InlineData("\n")]
+        [InlineData(" \t \n ")]
+        public void Create_WithNullOrEmptyOrWhitespace_ShouldThrowMailCantBeEmpty(string mailValue)
         {
-            // Arrange
-            string mailValue = null;
-
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() => Mail.Create(mailValue));
             Assert.Equal("Mail can't be empty", exception.Message);
         }
 
-        [Fact]
-        public void Create_WithEmptyMail_ShouldThrowArgumentException()
+        #endregion
+
+        #region Create Tests - Cas Limites et Erreurs (Format invalide)
+
+        [Theory]
+        [InlineData("invalid-email")]
+        [InlineData("testexample.com")]
+        [InlineData("test@")]
+        [InlineData("@example.com")]
+        [InlineData("test@example")]
+        [InlineData("test user@example.com")]
+        [InlineData("test@@example.com")]
+        [InlineData("test@exam ple.com")]
+        [InlineData("@")]
+        [InlineData("test@.com")]
+        [InlineData("test@com.")]
+        public void Create_WithInvalidFormat_ShouldThrowMailNotValid(string mailValue)
         {
-            // Arrange
-            var mailValue = "";
-
-            // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => Mail.Create(mailValue));
-            Assert.Equal("Mail can't be empty", exception.Message);
-        }
-
-        [Fact]
-        public void Create_WithWhitespaceMailOnly_ShouldThrowArgumentException()
-        {
-            // Arrange
-            var mailValue = "   ";
-
-            // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => Mail.Create(mailValue));
-            Assert.Equal("Mail can't be empty", exception.Message);
-        }
-
-        [Fact]
-        public void Create_WithInvalidMailFormat_ShouldThrowArgumentException()
-        {
-            // Arrange
-            var mailValue = "invalid-email";
-
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() => Mail.Create(mailValue));
             Assert.Equal("L'adresse email n'est pas valide.", exception.Message);
         }
 
-        [Fact]
-        public void Create_WithMailMissingAtSymbol_ShouldThrowArgumentException()
+        #endregion
+
+        #region Create Tests - Formats valides acceptés par la regex
+
+        [Theory]
+        [InlineData("a@b.c")]
+        [InlineData("test+tag@example.com")]
+        [InlineData("first.last@example.com")]
+        [InlineData("user123@example123.com")]
+        [InlineData("test-user@example-mail.com")]
+        [InlineData("test_user@example.com")]
+        [InlineData("test@mail.example.com")]
+        [InlineData("TEST@EXAMPLE.COM")]
+        [InlineData("user@sub.domain.example.com")]
+        public void Create_WithVariousValidFormats_ShouldCreateMail(string mailValue)
         {
-            // Arrange
-            var mailValue = "testexample.com";
-
-            // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => Mail.Create(mailValue));
-            Assert.Equal("L'adresse email n'est pas valide.", exception.Message);
-        }
-
-        [Fact]
-        public void Create_WithMailMissingDomain_ShouldThrowArgumentException()
-        {
-            // Arrange
-            var mailValue = "test@";
-
-            // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => Mail.Create(mailValue));
-            Assert.Equal("L'adresse email n'est pas valide.", exception.Message);
-        }
-
-        [Fact]
-        public void Create_WithMailMissingUsername_ShouldThrowArgumentException()
-        {
-            // Arrange
-            var mailValue = "@example.com";
-
-            // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => Mail.Create(mailValue));
-            Assert.Equal("L'adresse email n'est pas valide.", exception.Message);
-        }
-
-        [Fact]
-        public void Create_WithMailMissingTopLevelDomain_ShouldThrowArgumentException()
-        {
-            // Arrange
-            var mailValue = "test@example";
-
-            // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => Mail.Create(mailValue));
-            Assert.Equal("L'adresse email n'est pas valide.", exception.Message);
-        }
-
-        [Fact]
-        public void Create_WithMailWithSpaces_ShouldThrowArgumentException()
-        {
-            // Arrange
-            var mailValue = "test user@example.com";
-
-            // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => Mail.Create(mailValue));
-            Assert.Equal("L'adresse email n'est pas valide.", exception.Message);
-        }
-
-        [Fact]
-        public void Create_WithMailWithMultipleAtSymbols_ShouldThrowArgumentException()
-        {
-            // Arrange
-            var mailValue = "test@@example.com";
-
-            // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => Mail.Create(mailValue));
-            Assert.Equal("L'adresse email n'est pas valide.", exception.Message);
-        }
-
-        [Fact]
-        public void Create_WithMailStartingWithDot_ShouldCreateMailDueToSimpleRegex()
-        {
-            // Note: The current regex allows dots at the start of local part
-            // This documents the current behavior (could be improved in production)
-            // Arrange
-            var mailValue = ".test@example.com";
-
             // Act
             var mail = Mail.Create(mailValue);
 
@@ -476,18 +411,35 @@ namespace UnitTests.Domain.ValueObjects
         }
 
         [Fact]
+        public void Create_WithMailStartingWithDot_ShouldCreateMailDueToSimpleRegex()
+        {
+            // Note: The current regex allows dots at the start of local part
+            // This documents the current behavior (could be improved in production)
+            var mail = Mail.Create(".test@example.com");
+            Assert.NotNull(mail);
+            Assert.Equal(".test@example.com", mail.ToString());
+        }
+
+        [Fact]
         public void Create_WithMailEndingWithDot_ShouldCreateMailDueToSimpleRegex()
         {
             // Note: The current regex allows dots at the end of local part
-            // This documents the current behavior (could be improved in production)
+            var mail = Mail.Create("test.@example.com");
+            Assert.NotNull(mail);
+            Assert.Equal("test.@example.com", mail.ToString());
+        }
+
+        [Fact]
+        public void Create_WithLongEmail_ShouldCreateMail()
+        {
             // Arrange
-            var mailValue = "test.@example.com";
+            var localPart = new string('a', 50);
+            var mailValue = $"{localPart}@example.com";
 
             // Act
             var mail = Mail.Create(mailValue);
 
             // Assert
-            Assert.NotNull(mail);
             Assert.Equal(mailValue, mail.ToString());
         }
 

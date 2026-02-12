@@ -1,7 +1,6 @@
 ﻿using Application.Services;
 using AutoMapper;
 using Domain.Enums;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Shared;
 using Shared.Enums.Sorting;
@@ -72,15 +71,6 @@ namespace Web.Controllers.Admins
 
             return Ok(_mapper.Map<UserAdminVM>(user));
         }
-
-        [HttpGet]
-        public async Task<IActionResult> CreateUser()
-        {
-            var user = await _userService.CreateDefaultUser();
-
-            return Ok(_mapper.Map<UserAdminVM>(user));
-        }
-
         
 
         #region private methods

@@ -68,5 +68,21 @@ namespace Application.Services
             return await _authUserRepository.UpdateAsync(authUser);
         }
 
+        public async Task<AuthUser> CreateAuthUser(string pseudo, string mail, string password)
+        {
+            var user = new AuthUser(pseudo, "cat.png", mail, password, RoleUser.User);
+
+            return await _authUserRepository.InsertAsync(user);
+        }
+
+        public async Task<bool> IsMailAvailable(string mail)
+        {
+            return await _authUserRepository.CheckAvailableMail(mail);
+        }
+
+        public async Task<bool> IsPseudoAvailable(string pseudo)
+        {
+            return await _authUserRepository.CheckAvailablePseudo(pseudo);
+        }
     }
 }

@@ -59,6 +59,18 @@ namespace Infrastructure.Repositories
             };
         }
 
+        public async Task<bool> CheckAvailablePseudo(string pseudo)
+        {
+            return !(await _dbSet.AnyAsync(au => au.Pseudo == pseudo));
+        }
+
+        public async Task<bool> CheckAvailableMail(string mail)
+        {
+            return !(await _dbSet.AnyAsync(au => au.Email == mail));
+        }
+
+        #region Private Methods
+
         private static IQueryable<UserEntity> ApplySortToUsers(IQueryable<UserEntity> query, SortOption<SortUser> sortOption)
         {
             return sortOption.SortBy switch
@@ -75,5 +87,6 @@ namespace Infrastructure.Repositories
                 _ => query
             };
         }
+        #endregion
     }
 }

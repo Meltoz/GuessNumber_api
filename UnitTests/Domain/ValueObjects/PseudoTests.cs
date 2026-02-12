@@ -297,59 +297,100 @@ namespace UnitTests.Domain.ValueObjects
 
         #region Create Tests - Cas Limites et Erreurs
 
-        [Fact]
-        public void Create_WithNullPseudo_ShouldThrowArgumentException()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData("\t\t\t")]
+        [InlineData("\n\n\n")]
+        [InlineData("\r\n")]
+        [InlineData(" \t \n ")]
+        public void Create_WithNullOrEmptyOrWhitespace_ShouldThrowArgumentException(string pseudoValue)
         {
-            // Arrange
-            string pseudoValue = null;
-
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() => Pseudo.Create(pseudoValue));
             Assert.Equal("Pseudo can't be empty", exception.Message);
         }
 
         [Fact]
-        public void Create_WithEmptyPseudo_ShouldThrowArgumentException()
+        public void Create_WithLongPseudo_ShouldCreatePseudo()
         {
             // Arrange
-            var pseudoValue = "";
+            var pseudoValue = new string('A', 200);
 
-            // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => Pseudo.Create(pseudoValue));
-            Assert.Equal("Pseudo can't be empty", exception.Message);
+            // Act
+            var pseudo = Pseudo.Create(pseudoValue);
+
+            // Assert
+            Assert.Equal(pseudoValue, pseudo.Value);
         }
 
         [Fact]
-        public void Create_WithWhitespacePseudoOnly_ShouldThrowArgumentException()
+        public void Create_WithUnicodeCharacters_ShouldCreatePseudo()
         {
             // Arrange
-            var pseudoValue = "   ";
+            var pseudoValue = "Utilisateur_éàü";
 
-            // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => Pseudo.Create(pseudoValue));
-            Assert.Equal("Pseudo can't be empty", exception.Message);
+            // Act
+            var pseudo = Pseudo.Create(pseudoValue);
+
+            // Assert
+            Assert.Equal(pseudoValue, pseudo.Value);
         }
 
         [Fact]
-        public void Create_WithTabsPseudoOnly_ShouldThrowArgumentException()
+        public void Create_WithLeadingWhitespace_ShouldTrimLeft()
         {
             // Arrange
-            var pseudoValue = "\t\t\t";
+            var pseudoValue = "   User";
 
-            // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => Pseudo.Create(pseudoValue));
-            Assert.Equal("Pseudo can't be empty", exception.Message);
+            // Act
+            var pseudo = Pseudo.Create(pseudoValue);
+
+            // Assert
+            Assert.Equal("User", pseudo.Value);
         }
 
         [Fact]
-        public void Create_WithNewlinesPseudoOnly_ShouldThrowArgumentException()
+        public void Create_WithTrailingWhitespace_ShouldTrimRight()
         {
             // Arrange
-            var pseudoValue = "\n\n\n";
+            var pseudoValue = "User   ";
 
-            // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => Pseudo.Create(pseudoValue));
-            Assert.Equal("Pseudo can't be empty", exception.Message);
+            // Act
+            var pseudo = Pseudo.Create(pseudoValue);
+
+            // Assert
+            Assert.Equal("User", pseudo.Value);
+        }
+
+        [Fact]
+        public void Create_WithWhitespaceInMiddle_ShouldPreserveInternalSpaces()
+        {
+            // Arrange
+            var pseudoValue = "User Name";
+
+            // Act
+            var pseudo = Pseudo.Create(pseudoValue);
+
+            // Assert
+            Assert.Equal("User Name", pseudo.Value);
+        }
+
+        [Theory]
+        [InlineData("ValidUser")]
+        [InlineData("User123")]
+        [InlineData("a")]
+        [InlineData("User_Name")]
+        [InlineData("user-name")]
+        [InlineData("123")]
+        public void Create_WithVariousValidPseudos_ShouldCreatePseudo(string pseudoValue)
+        {
+            // Act
+            var pseudo = Pseudo.Create(pseudoValue);
+
+            // Assert
+            Assert.Equal(pseudoValue, pseudo.Value);
         }
 
         #endregion
