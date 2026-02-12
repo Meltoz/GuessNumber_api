@@ -603,7 +603,7 @@ namespace IntegrationTests.Repository
 
         #endregion
 
-        #region Insert Tests
+        #region Insert Tests (CreateAuthUser)
 
         [Fact]
         public async Task InsertAsync_WithValidAuthUser_ReturnsInsertedUser()
@@ -655,6 +655,286 @@ namespace IntegrationTests.Repository
             Assert.NotNull(userInDb);
             Assert.Equal("PersistUser", userInDb.Pseudo);
             Assert.Equal("persist@example.com", userInDb.Email);
+        }
+
+        [Fact]
+        public async Task InsertAsync_ShouldPersistCatPngAvatar()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "TestUser",
+                "cat.png",
+                "test@example.com",
+                "Password1@",
+                RoleUser.User
+            );
+
+            // Act
+            var result = await repository.InsertAsync(authUser);
+
+            // Assert
+            Assert.Equal("cat.png", result.Avatar);
+            var entityInDb = context.AuthUsers.FirstOrDefault(u => u.Id == result.Id);
+            Assert.NotNull(entityInDb);
+            Assert.Equal("cat.png", entityInDb.Avatar);
+        }
+
+        [Fact]
+        public async Task InsertAsync_ShouldPersistRoleUser()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "TestUser",
+                "cat.png",
+                "test@example.com",
+                "Password1@",
+                RoleUser.User
+            );
+
+            // Act
+            var result = await repository.InsertAsync(authUser);
+
+            // Assert
+            Assert.Equal(RoleUser.User, result.Role);
+            var entityInDb = context.AuthUsers.FirstOrDefault(u => u.Id == result.Id);
+            Assert.NotNull(entityInDb);
+            Assert.Equal(RoleUser.User, entityInDb.Role);
+        }
+
+        [Fact]
+        public async Task InsertAsync_ShouldPersistHashedPassword()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "TestUser",
+                "cat.png",
+                "test@example.com",
+                "Password1@",
+                RoleUser.User
+            );
+
+            // Act
+            var result = await repository.InsertAsync(authUser);
+
+            // Assert
+            var entityInDb = context.AuthUsers.FirstOrDefault(u => u.Id == result.Id);
+            Assert.NotNull(entityInDb);
+            Assert.NotEqual("Password1@", entityInDb.Password);
+            Assert.NotEmpty(entityInDb.Password);
+        }
+
+        [Fact]
+        public async Task InsertAsync_ShouldPersistPasswordMustBeChangedAsFalse()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "TestUser",
+                "cat.png",
+                "test@example.com",
+                "Password1@",
+                RoleUser.User
+            );
+
+            // Act
+            var result = await repository.InsertAsync(authUser);
+
+            // Assert
+            Assert.False(result.PasswordMustBeChanged);
+            var entityInDb = context.AuthUsers.FirstOrDefault(u => u.Id == result.Id);
+            Assert.NotNull(entityInDb);
+            Assert.False(entityInDb.PasswordMustBeChanged);
+        }
+
+        [Fact]
+        public async Task InsertAsync_ShouldPersistNullLastLoginAndLastChangePassword()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "TestUser",
+                "cat.png",
+                "test@example.com",
+                "Password1@",
+                RoleUser.User
+            );
+
+            // Act
+            var result = await repository.InsertAsync(authUser);
+
+            // Assert
+            Assert.Null(result.LastLogin);
+            Assert.Null(result.LastChangePassword);
+            var entityInDb = context.AuthUsers.FirstOrDefault(u => u.Id == result.Id);
+            Assert.NotNull(entityInDb);
+            Assert.Null(entityInDb.LastLogin);
+            Assert.Null(entityInDb.LastChangePassword);
+        }
+
+        [Fact]
+        public async Task InsertAsync_ThenGetByIdAsync_ShouldReturnSameData()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "JohnDoe",
+                "cat.png",
+                "john@example.com",
+                "Password1@",
+                RoleUser.User
+            );
+
+            // Act
+            var inserted = await repository.InsertAsync(authUser);
+            var retrieved = await repository.GetByIdAsync(inserted.Id);
+
+            // Assert
+            Assert.NotNull(retrieved);
+            Assert.Equal(inserted.Id, retrieved.Id);
+            Assert.Equal("JohnDoe", retrieved.Pseudo.Value);
+            Assert.Equal("john@example.com", retrieved.Mail.ToString());
+            Assert.Equal("cat.png", retrieved.Avatar);
+            Assert.Equal(RoleUser.User, retrieved.Role);
+            Assert.False(retrieved.PasswordMustBeChanged);
+            Assert.Null(retrieved.LastLogin);
+            Assert.Null(retrieved.LastChangePassword);
+        }
+
+        [Fact]
+        public async Task InsertAsync_MultipleUsers_ShouldPersistAll()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var user1 = new Domain.User.AuthUser("User1", "cat.png", "user1@example.com", "Password1@", RoleUser.User);
+            var user2 = new Domain.User.AuthUser("User2", "cat.png", "user2@example.com", "Password1@", RoleUser.User);
+            var user3 = new Domain.User.AuthUser("User3", "cat.png", "user3@example.com", "Password1@", RoleUser.User);
+
+            // Act
+            var result1 = await repository.InsertAsync(user1);
+            var result2 = await repository.InsertAsync(user2);
+            var result3 = await repository.InsertAsync(user3);
+
+            // Assert
+            Assert.Equal(3, context.AuthUsers.Count());
+            Assert.NotEqual(result1.Id, result2.Id);
+            Assert.NotEqual(result2.Id, result3.Id);
+            Assert.NotEqual(result1.Id, result3.Id);
+        }
+
+        [Fact]
+        public async Task InsertAsync_ShouldBeVisibleInGetAll()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "SearchableUser",
+                "cat.png",
+                "search@example.com",
+                "Password1@",
+                RoleUser.User
+            );
+
+            var sortOption = new SortOption<SortUser>
+            {
+                SortBy = SortUser.Pseudo,
+                Direction = SortDirection.Ascending
+            };
+
+            // Act
+            await repository.InsertAsync(authUser);
+            var result = await repository.GetAll(0, 10, sortOption, "SearchableUser");
+
+            // Assert
+            Assert.Equal(1, result.TotalCount);
+            Assert.Single(result.Data);
+            Assert.Equal("SearchableUser", result.Data.First().Pseudo.Value);
+        }
+
+        [Fact]
+        public async Task InsertAsync_ShouldBeSearchableByEmail()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "TestUser",
+                "cat.png",
+                "unique-email@domain.com",
+                "Password1@",
+                RoleUser.User
+            );
+
+            var sortOption = new SortOption<SortUser>
+            {
+                SortBy = SortUser.Pseudo,
+                Direction = SortDirection.Ascending
+            };
+
+            // Act
+            await repository.InsertAsync(authUser);
+            var result = await repository.GetAll(0, 10, sortOption, "unique-email");
+
+            // Assert
+            Assert.Equal(1, result.TotalCount);
+            var authUserResult = Assert.IsType<AuthUser>(result.Data.First());
+            Assert.Equal("unique-email@domain.com", authUserResult.Mail.ToString());
+        }
+
+        [Fact]
+        public async Task InsertAsync_ThenDelete_ShouldRemoveFromDatabase()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var authUser = new Domain.User.AuthUser(
+                "ToDelete",
+                "cat.png",
+                "delete@example.com",
+                "Password1@",
+                RoleUser.User
+            );
+
+            var inserted = await repository.InsertAsync(authUser);
+
+            // Act
+            repository.Delete(inserted.Id);
+            await repository.SaveAsync();
+
+            // Assert
+            var retrieved = await repository.GetByIdAsync(inserted.Id);
+            Assert.Null(retrieved);
+            Assert.Equal(0, context.AuthUsers.Count());
         }
 
         #endregion
@@ -1157,6 +1437,328 @@ namespace IntegrationTests.Repository
             var entityInDb = context.AuthUsers.FirstOrDefault(u => u.Id == entity.Id);
             Assert.NotNull(entityInDb);
             Assert.False(entityInDb.PasswordMustBeChanged);
+        }
+
+        #endregion
+
+        #region CheckAvailablePseudo Tests
+
+        [Fact]
+        public async Task CheckAvailablePseudo_WithNoUsers_ShouldReturnTrue()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            // Act
+            var result = await repository.CheckAvailablePseudo("AnyPseudo");
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task CheckAvailablePseudo_WithNonMatchingPseudo_ShouldReturnTrue()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            context.AuthUsers.Add(new AuthUserEntity
+            {
+                Pseudo = "ExistingUser",
+                Avatar = "avatar.png",
+                Email = "existing@example.com",
+                Password = "hashedpassword",
+                Role = Domain.Enums.RoleUser.User,
+                Created = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.CheckAvailablePseudo("DifferentUser");
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task CheckAvailablePseudo_WithExactMatchingPseudo_ShouldReturnFalse()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            context.AuthUsers.Add(new AuthUserEntity
+            {
+                Pseudo = "TakenUser",
+                Avatar = "avatar.png",
+                Email = "taken@example.com",
+                Password = "hashedpassword",
+                Role = Domain.Enums.RoleUser.User,
+                Created = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.CheckAvailablePseudo("TakenUser");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task CheckAvailablePseudo_WithDifferentCase_ShouldReturnTrue()
+        {
+            // Arrange - SQLite is case-sensitive by default for ==
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            context.AuthUsers.Add(new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "test@example.com",
+                Password = "hashedpassword",
+                Role = Domain.Enums.RoleUser.User,
+                Created = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.CheckAvailablePseudo("testuser");
+
+            // Assert - case-sensitive comparison: "testuser" != "TestUser"
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task CheckAvailablePseudo_WithMultipleUsers_ShouldReturnFalseForExistingPseudo()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            context.AuthUsers.AddRange(
+                new AuthUserEntity { Pseudo = "User1", Avatar = "a.png", Email = "u1@ex.com", Password = "h1", Role = Domain.Enums.RoleUser.User, Created = DateTime.UtcNow },
+                new AuthUserEntity { Pseudo = "User2", Avatar = "a.png", Email = "u2@ex.com", Password = "h2", Role = Domain.Enums.RoleUser.User, Created = DateTime.UtcNow },
+                new AuthUserEntity { Pseudo = "User3", Avatar = "a.png", Email = "u3@ex.com", Password = "h3", Role = Domain.Enums.RoleUser.User, Created = DateTime.UtcNow }
+            );
+            await context.SaveChangesAsync();
+
+            // Act & Assert
+            Assert.False(await repository.CheckAvailablePseudo("User2"));
+            Assert.True(await repository.CheckAvailablePseudo("User4"));
+        }
+
+        [Fact]
+        public async Task CheckAvailablePseudo_AfterDeletion_ShouldReturnTrue()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var entity = new AuthUserEntity
+            {
+                Pseudo = "ToDelete",
+                Avatar = "avatar.png",
+                Email = "delete@example.com",
+                Password = "hashedpassword",
+                Role = Domain.Enums.RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            context.AuthUsers.Add(entity);
+            await context.SaveChangesAsync();
+
+            Assert.False(await repository.CheckAvailablePseudo("ToDelete"));
+
+            // Act
+            context.AuthUsers.Remove(entity);
+            await context.SaveChangesAsync();
+
+            // Assert
+            Assert.True(await repository.CheckAvailablePseudo("ToDelete"));
+        }
+
+        #endregion
+
+        #region CheckAvailableMail Tests
+
+        [Fact]
+        public async Task CheckAvailableMail_WithNoUsers_ShouldReturnTrue()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            // Act
+            var result = await repository.CheckAvailableMail("any@example.com");
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task CheckAvailableMail_WithNonMatchingMail_ShouldReturnTrue()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            context.AuthUsers.Add(new AuthUserEntity
+            {
+                Pseudo = "ExistingUser",
+                Avatar = "avatar.png",
+                Email = "existing@example.com",
+                Password = "hashedpassword",
+                Role = Domain.Enums.RoleUser.User,
+                Created = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.CheckAvailableMail("different@example.com");
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task CheckAvailableMail_WithExactMatchingMail_ShouldReturnFalse()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            context.AuthUsers.Add(new AuthUserEntity
+            {
+                Pseudo = "TakenUser",
+                Avatar = "avatar.png",
+                Email = "taken@example.com",
+                Password = "hashedpassword",
+                Role = Domain.Enums.RoleUser.User,
+                Created = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.CheckAvailableMail("taken@example.com");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task CheckAvailableMail_WithDifferentCase_ShouldReturnTrue()
+        {
+            // Arrange - SQLite is case-sensitive by default for ==
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            context.AuthUsers.Add(new AuthUserEntity
+            {
+                Pseudo = "TestUser",
+                Avatar = "avatar.png",
+                Email = "Test@Example.com",
+                Password = "hashedpassword",
+                Role = Domain.Enums.RoleUser.User,
+                Created = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await repository.CheckAvailableMail("test@example.com");
+
+            // Assert - case-sensitive comparison: "test@example.com" != "Test@Example.com"
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task CheckAvailableMail_WithMultipleUsers_ShouldReturnFalseForExistingMail()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            context.AuthUsers.AddRange(
+                new AuthUserEntity { Pseudo = "User1", Avatar = "a.png", Email = "user1@ex.com", Password = "h1", Role = Domain.Enums.RoleUser.User, Created = DateTime.UtcNow },
+                new AuthUserEntity { Pseudo = "User2", Avatar = "a.png", Email = "user2@ex.com", Password = "h2", Role = Domain.Enums.RoleUser.User, Created = DateTime.UtcNow },
+                new AuthUserEntity { Pseudo = "User3", Avatar = "a.png", Email = "user3@ex.com", Password = "h3", Role = Domain.Enums.RoleUser.User, Created = DateTime.UtcNow }
+            );
+            await context.SaveChangesAsync();
+
+            // Act & Assert
+            Assert.False(await repository.CheckAvailableMail("user2@ex.com"));
+            Assert.True(await repository.CheckAvailableMail("user4@ex.com"));
+        }
+
+        [Fact]
+        public async Task CheckAvailableMail_AfterDeletion_ShouldReturnTrue()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            var entity = new AuthUserEntity
+            {
+                Pseudo = "ToDelete",
+                Avatar = "avatar.png",
+                Email = "delete@example.com",
+                Password = "hashedpassword",
+                Role = Domain.Enums.RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            context.AuthUsers.Add(entity);
+            await context.SaveChangesAsync();
+
+            Assert.False(await repository.CheckAvailableMail("delete@example.com"));
+
+            // Act
+            context.AuthUsers.Remove(entity);
+            await context.SaveChangesAsync();
+
+            // Assert
+            Assert.True(await repository.CheckAvailableMail("delete@example.com"));
+        }
+
+        [Fact]
+        public async Task CheckAvailablePseudo_AndCheckAvailableMail_ShouldBeIndependent()
+        {
+            // Arrange
+            var context = DbContextProvider.SetupContext();
+            var mapper = MapperProvider.SetupMapper();
+            var repository = new AuthUserRepository(context, mapper);
+
+            context.AuthUsers.Add(new AuthUserEntity
+            {
+                Pseudo = "UniqueUser",
+                Avatar = "avatar.png",
+                Email = "unique@example.com",
+                Password = "hashedpassword",
+                Role = Domain.Enums.RoleUser.User,
+                Created = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+
+            // Act & Assert - pseudo taken but different mail available
+            Assert.False(await repository.CheckAvailablePseudo("UniqueUser"));
+            Assert.True(await repository.CheckAvailableMail("other@example.com"));
+
+            // Act & Assert - pseudo available but mail taken
+            Assert.True(await repository.CheckAvailablePseudo("OtherUser"));
+            Assert.False(await repository.CheckAvailableMail("unique@example.com"));
         }
 
         #endregion

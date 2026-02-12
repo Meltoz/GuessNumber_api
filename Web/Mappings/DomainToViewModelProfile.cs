@@ -40,6 +40,11 @@ namespace Web.Mappings
             CreateMap<GuestUser, UserAdminVM>()
                 .ForMember(dest => dest.Pseudo, opt => opt.MapFrom(src => src.Pseudo.ToString()))
                 .ForMember(dest => dest.IsAuth, opt => opt.MapFrom(src => false));
+
+
+            CreateMap<AuthUser, AuthUserDetailVM>()
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Mail.ToString()));
+            CreateMap<AuthUser, AuthUserSummaryVM>();
         }
     }
 }

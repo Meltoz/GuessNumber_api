@@ -1332,5 +1332,710 @@ namespace UnitTests.Application
         }
 
         #endregion
+
+        #region CreateAuthUser Tests
+
+        [Fact]
+        public async Task CreateAuthUser_ShouldCallAuthUserRepositoryInsertAsync()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            authUserRepoMock.Setup(r => r.InsertAsync(It.IsAny<AuthUser>()))
+                .ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.CreateAuthUser("TestUser", "test@example.com", "Password1@");
+
+            // Assert
+            authUserRepoMock.Verify(r => r.InsertAsync(It.IsAny<AuthUser>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_ShouldReturnAuthUserFromRepository()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            authUserRepoMock.Setup(r => r.InsertAsync(It.IsAny<AuthUser>()))
+                .ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            var result = await service.CreateAuthUser("TestUser", "test@example.com", "Password1@");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<AuthUser>(result);
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_ShouldCreateUserWithCorrectPseudo()
+        {
+            // Arrange
+            AuthUser capturedUser = null;
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            authUserRepoMock.Setup(r => r.InsertAsync(It.IsAny<AuthUser>()))
+                .Callback<AuthUser>(u => capturedUser = u)
+                .ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.CreateAuthUser("JohnDoe", "john@example.com", "Password1@");
+
+            // Assert
+            Assert.NotNull(capturedUser);
+            Assert.Equal("JohnDoe", capturedUser.Pseudo.Value);
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_ShouldCreateUserWithCorrectMail()
+        {
+            // Arrange
+            AuthUser capturedUser = null;
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            authUserRepoMock.Setup(r => r.InsertAsync(It.IsAny<AuthUser>()))
+                .Callback<AuthUser>(u => capturedUser = u)
+                .ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.CreateAuthUser("JohnDoe", "john@example.com", "Password1@");
+
+            // Assert
+            Assert.NotNull(capturedUser);
+            Assert.Equal("john@example.com", capturedUser.Mail.ToString());
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_ShouldCreateUserWithCatPngAvatar()
+        {
+            // Arrange
+            AuthUser capturedUser = null;
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            authUserRepoMock.Setup(r => r.InsertAsync(It.IsAny<AuthUser>()))
+                .Callback<AuthUser>(u => capturedUser = u)
+                .ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.CreateAuthUser("JohnDoe", "john@example.com", "Password1@");
+
+            // Assert
+            Assert.NotNull(capturedUser);
+            Assert.Equal("cat.png", capturedUser.Avatar);
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_ShouldCreateUserWithRoleUser()
+        {
+            // Arrange
+            AuthUser capturedUser = null;
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            authUserRepoMock.Setup(r => r.InsertAsync(It.IsAny<AuthUser>()))
+                .Callback<AuthUser>(u => capturedUser = u)
+                .ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.CreateAuthUser("JohnDoe", "john@example.com", "Password1@");
+
+            // Assert
+            Assert.NotNull(capturedUser);
+            Assert.Equal(RoleUser.User, capturedUser.Role);
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_ShouldCreateUserWithPasswordMustBeChangedFalse()
+        {
+            // Arrange
+            AuthUser capturedUser = null;
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            authUserRepoMock.Setup(r => r.InsertAsync(It.IsAny<AuthUser>()))
+                .Callback<AuthUser>(u => capturedUser = u)
+                .ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.CreateAuthUser("JohnDoe", "john@example.com", "Password1@");
+
+            // Assert
+            Assert.NotNull(capturedUser);
+            Assert.False(capturedUser.PasswordMustBeChanged);
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_ShouldNotCallUserRepository()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            authUserRepoMock.Setup(r => r.InsertAsync(It.IsAny<AuthUser>()))
+                .ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.CreateAuthUser("JohnDoe", "john@example.com", "Password1@");
+
+            // Assert
+            userRepoMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_ShouldThrow_WhenRepositoryThrows()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            authUserRepoMock.Setup(r => r.InsertAsync(It.IsAny<AuthUser>()))
+                .ThrowsAsync(new Exception("Database error"));
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => service.CreateAuthUser("JohnDoe", "john@example.com", "Password1@"));
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_WithInvalidMail_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAuthUser("JohnDoe", "invalid-email", "Password1@"));
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_WithInvalidMail_ShouldNotCallInsertAsync()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            try { await service.CreateAuthUser("JohnDoe", "invalid-email", "Password1@"); } catch { }
+            authUserRepoMock.Verify(r => r.InsertAsync(It.IsAny<AuthUser>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_WithInvalidPassword_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAuthUser("JohnDoe", "john@example.com", "weak"));
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_WithInvalidPassword_ShouldNotCallInsertAsync()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            try { await service.CreateAuthUser("JohnDoe", "john@example.com", "weak"); } catch { }
+            authUserRepoMock.Verify(r => r.InsertAsync(It.IsAny<AuthUser>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_WithEmptyPseudo_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAuthUser("", "john@example.com", "Password1@"));
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_ShouldReturnUserWithHashedPassword()
+        {
+            // Arrange
+            AuthUser capturedUser = null;
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            authUserRepoMock.Setup(r => r.InsertAsync(It.IsAny<AuthUser>()))
+                .Callback<AuthUser>(u => capturedUser = u)
+                .ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.CreateAuthUser("JohnDoe", "john@example.com", "Password1@");
+
+            // Assert
+            Assert.NotNull(capturedUser);
+            Assert.NotEqual("Password1@", capturedUser.Password.ToString());
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_ShouldReturnUserWithNullLastLogin()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            authUserRepoMock.Setup(r => r.InsertAsync(It.IsAny<AuthUser>()))
+                .ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            var result = await service.CreateAuthUser("JohnDoe", "john@example.com", "Password1@");
+
+            // Assert
+            Assert.Null(result.LastLogin);
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_ShouldReturnUserWithNullLastChangePassword()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            authUserRepoMock.Setup(r => r.InsertAsync(It.IsAny<AuthUser>()))
+                .ReturnsAsync((AuthUser u) => u);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            var result = await service.CreateAuthUser("JohnDoe", "john@example.com", "Password1@");
+
+            // Assert
+            Assert.Null(result.LastChangePassword);
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_WithNullPseudo_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAuthUser(null, "john@example.com", "Password1@"));
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_WithEmptyMail_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAuthUser("JohnDoe", "", "Password1@"));
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_WithNullMail_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAuthUser("JohnDoe", null, "Password1@"));
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_WithEmptyPassword_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAuthUser("JohnDoe", "john@example.com", ""));
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_WithNullPassword_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAuthUser("JohnDoe", "john@example.com", null));
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_WithPasswordMissingUppercase_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAuthUser("JohnDoe", "john@example.com", "password1@"));
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_WithPasswordMissingSpecialChar_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAuthUser("JohnDoe", "john@example.com", "Password1"));
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_WithPasswordMissingDigit_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAuthUser("JohnDoe", "john@example.com", "Password@"));
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_WithMailMissingAtSymbol_ShouldThrowArgumentException()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAuthUser("JohnDoe", "johnexample.com", "Password1@"));
+        }
+
+        [Fact]
+        public async Task CreateAuthUser_WithInvalidInputs_ShouldNeverCallRepository()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act - try all invalid cases
+            try { await service.CreateAuthUser(null, "john@example.com", "Password1@"); } catch { }
+            try { await service.CreateAuthUser("John", null, "Password1@"); } catch { }
+            try { await service.CreateAuthUser("John", "john@example.com", null); } catch { }
+            try { await service.CreateAuthUser("John", "invalid", "Password1@"); } catch { }
+            try { await service.CreateAuthUser("John", "john@example.com", "weak"); } catch { }
+
+            // Assert
+            authUserRepoMock.Verify(r => r.InsertAsync(It.IsAny<AuthUser>()), Times.Never);
+            userRepoMock.VerifyNoOtherCalls();
+        }
+
+        #endregion
+
+        #region IsPseudoAvailable Tests
+
+        [Fact]
+        public async Task IsPseudoAvailable_ShouldCallCheckAvailablePseudoOnRepository()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<string>())).ReturnsAsync(true);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.IsPseudoAvailable("TestUser");
+
+            // Assert
+            authUserRepoMock.Verify(r => r.CheckAvailablePseudo("TestUser"), Times.Once);
+        }
+
+        [Fact]
+        public async Task IsPseudoAvailable_ShouldReturnTrue_WhenPseudoIsAvailable()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.CheckAvailablePseudo("NewUser")).ReturnsAsync(true);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            var result = await service.IsPseudoAvailable("NewUser");
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task IsPseudoAvailable_ShouldReturnFalse_WhenPseudoIsTaken()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.CheckAvailablePseudo("ExistingUser")).ReturnsAsync(false);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            var result = await service.IsPseudoAvailable("ExistingUser");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task IsPseudoAvailable_ShouldPassExactPseudoToRepository()
+        {
+            // Arrange
+            string capturedPseudo = null;
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<string>()))
+                .Callback<string>(p => capturedPseudo = p)
+                .ReturnsAsync(true);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.IsPseudoAvailable("  SpacedPseudo  ");
+
+            // Assert
+            Assert.Equal("  SpacedPseudo  ", capturedPseudo);
+        }
+
+        [Fact]
+        public async Task IsPseudoAvailable_ShouldThrow_WhenRepositoryThrows()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<string>()))
+                .ThrowsAsync(new Exception("Database error"));
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => service.IsPseudoAvailable("TestUser"));
+        }
+
+        [Fact]
+        public async Task IsPseudoAvailable_ShouldNotCallUserRepository()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<string>())).ReturnsAsync(true);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.IsPseudoAvailable("TestUser");
+
+            // Assert
+            userRepoMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task IsPseudoAvailable_ShouldNotCallOtherAuthUserRepoMethods()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<string>())).ReturnsAsync(true);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.IsPseudoAvailable("TestUser");
+
+            // Assert
+            authUserRepoMock.Verify(r => r.CheckAvailablePseudo("TestUser"), Times.Once);
+            authUserRepoMock.Verify(r => r.InsertAsync(It.IsAny<AuthUser>()), Times.Never);
+            authUserRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
+        }
+
+        #endregion
+
+        #region IsMailAvailable Tests
+
+        [Fact]
+        public async Task IsMailAvailable_ShouldCallCheckAvailableMailOnRepository()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<string>())).ReturnsAsync(true);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.IsMailAvailable("test@example.com");
+
+            // Assert
+            authUserRepoMock.Verify(r => r.CheckAvailableMail("test@example.com"), Times.Once);
+        }
+
+        [Fact]
+        public async Task IsMailAvailable_ShouldReturnTrue_WhenMailIsAvailable()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.CheckAvailableMail("new@example.com")).ReturnsAsync(true);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            var result = await service.IsMailAvailable("new@example.com");
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task IsMailAvailable_ShouldReturnFalse_WhenMailIsTaken()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.CheckAvailableMail("taken@example.com")).ReturnsAsync(false);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            var result = await service.IsMailAvailable("taken@example.com");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task IsMailAvailable_ShouldPassExactMailToRepository()
+        {
+            // Arrange
+            string capturedMail = null;
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<string>()))
+                .Callback<string>(m => capturedMail = m)
+                .ReturnsAsync(true);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.IsMailAvailable("Test@Example.COM");
+
+            // Assert
+            Assert.Equal("Test@Example.COM", capturedMail);
+        }
+
+        [Fact]
+        public async Task IsMailAvailable_ShouldThrow_WhenRepositoryThrows()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<string>()))
+                .ThrowsAsync(new Exception("Database error"));
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => service.IsMailAvailable("test@example.com"));
+        }
+
+        [Fact]
+        public async Task IsMailAvailable_ShouldNotCallUserRepository()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<string>())).ReturnsAsync(true);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.IsMailAvailable("test@example.com");
+
+            // Assert
+            userRepoMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task IsMailAvailable_ShouldNotCallOtherAuthUserRepoMethods()
+        {
+            // Arrange
+            var userRepoMock = new Mock<IUserRepository>();
+            var authUserRepoMock = new Mock<IAuthUserRepository>();
+            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<string>())).ReturnsAsync(true);
+
+            var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
+
+            // Act
+            await service.IsMailAvailable("test@example.com");
+
+            // Assert
+            authUserRepoMock.Verify(r => r.CheckAvailableMail("test@example.com"), Times.Once);
+            authUserRepoMock.Verify(r => r.InsertAsync(It.IsAny<AuthUser>()), Times.Never);
+            authUserRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
+        }
+
+        #endregion
     }
 }

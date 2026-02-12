@@ -18,7 +18,7 @@ namespace Domain.User
 
         public bool PasswordMustBeChanged { get; private set; }
 
-        public AuthUser() : base()
+        private AuthUser() : base()
         {
 
         }
@@ -49,11 +49,6 @@ namespace Domain.User
             Password = Password.Create(password);
             LastChangePassword = DateTime.UtcNow;
             PasswordMustBeChanged = false;
-        }
-
-        public void ChangeRole(RoleUser role)
-        {
-            Role = role;
         }
 
         public void ChangeRole(RoleUser role)
