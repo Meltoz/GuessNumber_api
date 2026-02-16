@@ -1,4 +1,5 @@
 ﻿using Application.Interfaces.Repository;
+using Application.Services;
 using Infrastructure.Mappings;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +21,7 @@ namespace Infrastructure
                 if (string.IsNullOrWhiteSpace(defaultConnection))
                     throw new Exception("No configuration for database");
 
-                services.AddDbContext<GuessNumberContext>(options =>
+                services.AddDbContext<GuessNumberContext>((serviceProvider, options) =>
                 {
                     options.UseNpgsql(defaultConnection);
                 });
@@ -34,6 +35,7 @@ namespace Infrastructure
             services.AddScoped<IProposalRepository, ProposalRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IAuthUserRepository, AuthUserRepository>();
+            services.AddScoped<ITokenRepository, TokenRepository>();
 
             services.AddAutoMapper(cfg => { cfg.ShouldUseConstructor = ci => ci.IsPrivate; }, typeof(DomainToEntityProfile), typeof(EntityToDomainProfile));
             return services;

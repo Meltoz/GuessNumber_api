@@ -41,6 +41,14 @@ namespace Domain.ValueObjects
             return new Password(hashedPassword);
         }
 
+        public static Password FromHash(string hashedPassword)
+        {
+            if (string.IsNullOrWhiteSpace(hashedPassword))
+                throw new ArgumentException("Password can't be empty");
+
+            return new Password(hashedPassword);
+        }
+
         protected override IEnumerable<object> GetEqualityComponents()
         {
             yield return _value;

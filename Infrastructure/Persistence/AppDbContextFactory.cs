@@ -28,7 +28,7 @@ namespace Infrastructure.Persistence
             var optionsBuilder = new DbContextOptionsBuilder<GuessNumberContext>();
             optionsBuilder.UseNpgsql(connectionString);
 
-            return new GuessNumberContext(optionsBuilder.Options);
+            return new GuessNumberContext(optionsBuilder.Options, null);
         }
     }
 }

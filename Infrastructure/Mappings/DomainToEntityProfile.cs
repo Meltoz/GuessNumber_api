@@ -33,6 +33,13 @@ namespace Infrastructure.Mappings
 
             CreateMap<GuestUser, UserEntity>()
                 .ForMember(dest => dest.Pseudo, opt => opt.MapFrom(src => src.Pseudo.ToString()));
+
+            CreateMap<TokenInfo, TokenEntity>()
+                .ForMember(dest => dest.AccessToken, opt => opt.MapFrom(src => src.AccessToken.ToString()))
+                .ForMember(dest => dest.RefreshToken, opt => opt.MapFrom(src => src.RefreshToken.ToString()))
+                .ForMember(dest => dest.IpAddress, opt => opt.MapFrom(src => src.IpAdress.ToString()))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.User.Id))
+                .ForMember(dest => dest.User, opt => opt.Ignore());
         }
 
     }

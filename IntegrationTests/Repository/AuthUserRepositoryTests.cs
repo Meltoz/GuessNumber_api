@@ -1,5 +1,6 @@
 using Domain.Enums;
 using Domain.User;
+using Domain.ValueObjects;
 using Infrastructure.Entities;
 using Infrastructure.Repositories;
 using Meltix.IntegrationTests;
@@ -1450,9 +1451,9 @@ namespace IntegrationTests.Repository
             var context = DbContextProvider.SetupContext();
             var mapper = MapperProvider.SetupMapper();
             var repository = new AuthUserRepository(context, mapper);
-
+            var pseudo = Pseudo.Create("anyPseudo");
             // Act
-            var result = await repository.CheckAvailablePseudo("AnyPseudo");
+            var result = await repository.CheckAvailablePseudo(pseudo);
 
             // Assert
             Assert.True(result);
@@ -1476,9 +1477,10 @@ namespace IntegrationTests.Repository
                 Created = DateTime.UtcNow
             });
             await context.SaveChangesAsync();
+            var pseudo = Pseudo.Create("DifferentUser");
 
             // Act
-            var result = await repository.CheckAvailablePseudo("DifferentUser");
+            var result = await repository.CheckAvailablePseudo(pseudo);
 
             // Assert
             Assert.True(result);
@@ -1502,9 +1504,9 @@ namespace IntegrationTests.Repository
                 Created = DateTime.UtcNow
             });
             await context.SaveChangesAsync();
-
+            var pseudo = Pseudo.Create("TakenUser");
             // Act
-            var result = await repository.CheckAvailablePseudo("TakenUser");
+            var result = await repository.CheckAvailablePseudo(pseudo);
 
             // Assert
             Assert.False(result);
@@ -1528,12 +1530,13 @@ namespace IntegrationTests.Repository
                 Created = DateTime.UtcNow
             });
             await context.SaveChangesAsync();
+            var pseudo = Pseudo.Create("testuser");
 
             // Act
-            var result = await repository.CheckAvailablePseudo("testuser");
+            var result = await repository.CheckAvailablePseudo(pseudo);
 
-            // Assert - case-sensitive comparison: "testuser" != "TestUser"
-            Assert.True(result);
+            // Assert - case-sensitive comparison: "testuser" == "TestUser"
+            Assert.False(result);
         }
 
         [Fact]
@@ -1550,10 +1553,12 @@ namespace IntegrationTests.Repository
                 new AuthUserEntity { Pseudo = "User3", Avatar = "a.png", Email = "u3@ex.com", Password = "h3", Role = Domain.Enums.RoleUser.User, Created = DateTime.UtcNow }
             );
             await context.SaveChangesAsync();
+            var pseudoUser2 = Pseudo.Create("User2");
+            var pseudoUser4 = Pseudo.Create("User4");
 
             // Act & Assert
-            Assert.False(await repository.CheckAvailablePseudo("User2"));
-            Assert.True(await repository.CheckAvailablePseudo("User4"));
+            Assert.False(await repository.CheckAvailablePseudo(pseudoUser2));
+            Assert.True(await repository.CheckAvailablePseudo(pseudoUser4));
         }
 
         [Fact]
@@ -1575,15 +1580,16 @@ namespace IntegrationTests.Repository
             };
             context.AuthUsers.Add(entity);
             await context.SaveChangesAsync();
+            var pseudo = Pseudo.Create("ToDelete");
 
-            Assert.False(await repository.CheckAvailablePseudo("ToDelete"));
+            Assert.False(await repository.CheckAvailablePseudo(pseudo));
 
             // Act
             context.AuthUsers.Remove(entity);
             await context.SaveChangesAsync();
 
             // Assert
-            Assert.True(await repository.CheckAvailablePseudo("ToDelete"));
+            Assert.True(await repository.CheckAvailablePseudo(pseudo));
         }
 
         #endregion
@@ -1597,9 +1603,10 @@ namespace IntegrationTests.Repository
             var context = DbContextProvider.SetupContext();
             var mapper = MapperProvider.SetupMapper();
             var repository = new AuthUserRepository(context, mapper);
+            var mail = Mail.Create("any@example.com");
 
             // Act
-            var result = await repository.CheckAvailableMail("any@example.com");
+            var result = await repository.CheckAvailableMail(mail);
 
             // Assert
             Assert.True(result);
@@ -1623,9 +1630,10 @@ namespace IntegrationTests.Repository
                 Created = DateTime.UtcNow
             });
             await context.SaveChangesAsync();
+            var mail = Mail.Create("different@example.com");
 
             // Act
-            var result = await repository.CheckAvailableMail("different@example.com");
+            var result = await repository.CheckAvailableMail(mail);
 
             // Assert
             Assert.True(result);
@@ -1639,6 +1647,8 @@ namespace IntegrationTests.Repository
             var mapper = MapperProvider.SetupMapper();
             var repository = new AuthUserRepository(context, mapper);
 
+            var mail = Mail.Create("taken@example.com");
+
             context.AuthUsers.Add(new AuthUserEntity
             {
                 Pseudo = "TakenUser",
@@ -1650,8 +1660,9 @@ namespace IntegrationTests.Repository
             });
             await context.SaveChangesAsync();
 
+
             // Act
-            var result = await repository.CheckAvailableMail("taken@example.com");
+            var result = await repository.CheckAvailableMail(mail);
 
             // Assert
             Assert.False(result);
@@ -1665,6 +1676,8 @@ namespace IntegrationTests.Repository
             var mapper = MapperProvider.SetupMapper();
             var repository = new AuthUserRepository(context, mapper);
 
+            var mail = Mail.Create("test@example.com");
+
             context.AuthUsers.Add(new AuthUserEntity
             {
                 Pseudo = "TestUser",
@@ -1677,7 +1690,7 @@ namespace IntegrationTests.Repository
             await context.SaveChangesAsync();
 
             // Act
-            var result = await repository.CheckAvailableMail("test@example.com");
+            var result = await repository.CheckAvailableMail(mail);
 
             // Assert - case-sensitive comparison: "test@example.com" != "Test@Example.com"
             Assert.True(result);
@@ -1691,6 +1704,9 @@ namespace IntegrationTests.Repository
             var mapper = MapperProvider.SetupMapper();
             var repository = new AuthUserRepository(context, mapper);
 
+            var mailUser2 = Mail.Create("user2@ex.com");
+            var mailUser4 = Mail.Create("user4@ex.com");
+
             context.AuthUsers.AddRange(
                 new AuthUserEntity { Pseudo = "User1", Avatar = "a.png", Email = "user1@ex.com", Password = "h1", Role = Domain.Enums.RoleUser.User, Created = DateTime.UtcNow },
                 new AuthUserEntity { Pseudo = "User2", Avatar = "a.png", Email = "user2@ex.com", Password = "h2", Role = Domain.Enums.RoleUser.User, Created = DateTime.UtcNow },
@@ -1699,8 +1715,8 @@ namespace IntegrationTests.Repository
             await context.SaveChangesAsync();
 
             // Act & Assert
-            Assert.False(await repository.CheckAvailableMail("user2@ex.com"));
-            Assert.True(await repository.CheckAvailableMail("user4@ex.com"));
+            Assert.False(await repository.CheckAvailableMail(mailUser2));
+            Assert.True(await repository.CheckAvailableMail(mailUser4));
         }
 
         [Fact]
@@ -1710,6 +1726,8 @@ namespace IntegrationTests.Repository
             var context = DbContextProvider.SetupContext();
             var mapper = MapperProvider.SetupMapper();
             var repository = new AuthUserRepository(context, mapper);
+
+            var mail = Mail.Create("delete@example.com");
 
             var entity = new AuthUserEntity
             {
@@ -1723,14 +1741,14 @@ namespace IntegrationTests.Repository
             context.AuthUsers.Add(entity);
             await context.SaveChangesAsync();
 
-            Assert.False(await repository.CheckAvailableMail("delete@example.com"));
+            Assert.False(await repository.CheckAvailableMail(mail));
 
             // Act
             context.AuthUsers.Remove(entity);
             await context.SaveChangesAsync();
 
             // Assert
-            Assert.True(await repository.CheckAvailableMail("delete@example.com"));
+            Assert.True(await repository.CheckAvailableMail(mail));
         }
 
         [Fact]
@@ -1740,6 +1758,11 @@ namespace IntegrationTests.Repository
             var context = DbContextProvider.SetupContext();
             var mapper = MapperProvider.SetupMapper();
             var repository = new AuthUserRepository(context, mapper);
+
+            var takenPseudo = Pseudo.Create("UniqueUser");
+            var freePseudo = Pseudo.Create("OtherUser");
+            var takenMail = Mail.Create("unique@example.com");
+            var freeMail = Mail.Create("other@example.com");
 
             context.AuthUsers.Add(new AuthUserEntity
             {
@@ -1753,12 +1776,12 @@ namespace IntegrationTests.Repository
             await context.SaveChangesAsync();
 
             // Act & Assert - pseudo taken but different mail available
-            Assert.False(await repository.CheckAvailablePseudo("UniqueUser"));
-            Assert.True(await repository.CheckAvailableMail("other@example.com"));
+            Assert.False(await repository.CheckAvailablePseudo(takenPseudo));
+            Assert.True(await repository.CheckAvailableMail(freeMail));
 
             // Act & Assert - pseudo available but mail taken
-            Assert.True(await repository.CheckAvailablePseudo("OtherUser"));
-            Assert.False(await repository.CheckAvailableMail("unique@example.com"));
+            Assert.True(await repository.CheckAvailablePseudo(freePseudo));
+            Assert.False(await repository.CheckAvailableMail(takenMail));
         }
 
         #endregion

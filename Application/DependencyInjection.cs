@@ -14,6 +14,9 @@ namespace Application
             services.AddScoped<QuestionService>();
             services.AddScoped<ProposalService>();
             services.AddScoped<UserService>();
+            services.AddScoped<AesEncryptionService>();
+            services.AddScoped<JwtService>();
+            services.AddScoped<TokenService>();
 
 
             return services;
