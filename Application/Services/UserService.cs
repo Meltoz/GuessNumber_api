@@ -2,6 +2,7 @@
 using Application.Interfaces.Repository;
 using Domain.Enums;
 using Domain.User;
+using Domain.ValueObjects;
 using Shared;
 using Shared.Enums.Sorting;
 
@@ -75,14 +76,32 @@ namespace Application.Services
             return await _authUserRepository.InsertAsync(user);
         }
 
-        public async Task<bool> IsMailAvailable(string mail)
+        public async Task<bool> IsMailAvailable(string mailtoCheck)
         {
+            var mail = Mail.Create(mailtoCheck);
             return await _authUserRepository.CheckAvailableMail(mail);
         }
 
-        public async Task<bool> IsPseudoAvailable(string pseudo)
+        public async Task<bool> IsPseudoAvailable(string pseudoToCheck)
         {
+            var pseudo = Pseudo.Create(pseudoToCheck);
             return await _authUserRepository.CheckAvailablePseudo(pseudo);
+        }
+
+        public async Task<AuthUser> ConnectUser(string pseudo, string password)
+        {
+            var hashedPassword = Password.Create(password);
+            var pseudoUser = Pseudo.Create(pseudo);
+
+            var user =  await _authUserRepository.ConnectUser(pseudoUser, hashedPassword);
+
+            if (user is null)
+                throw new EntityNotFoundException();
+
+            user.Login();
+            await _authUserRepository.UpdateAsync(user);
+
+            return user;
         }
     }
 }

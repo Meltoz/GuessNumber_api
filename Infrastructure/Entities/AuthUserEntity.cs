@@ -16,6 +16,8 @@ namespace Infrastructure.Entities
 
         public DateTime? LastChangePassword { get; set; }
 
+        public ICollection<TokenEntity> Tokens { get; set; }
+
 
     }
 }

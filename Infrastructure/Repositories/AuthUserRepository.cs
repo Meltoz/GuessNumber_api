@@ -1,6 +1,7 @@
 ﻿using Application.Interfaces.Repository;
 using AutoMapper;
 using Domain.User;
+using Domain.ValueObjects;
 using Infrastructure.Entities;
 using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
@@ -59,14 +60,21 @@ namespace Infrastructure.Repositories
             };
         }
 
-        public async Task<bool> CheckAvailablePseudo(string pseudo)
+        public async Task<bool> CheckAvailablePseudo(Pseudo pseudo)
         {
-            return !(await _dbSet.AnyAsync(au => au.Pseudo == pseudo));
+            return !(await _dbSet.AnyAsync(au => au.Pseudo.ToLower() == pseudo.ToString().ToLower()));
         }
 
-        public async Task<bool> CheckAvailableMail(string mail)
+        public async Task<bool> CheckAvailableMail(Mail mail)
         {
             return !(await _dbSet.AnyAsync(au => au.Email == mail));
+        }
+
+        public async Task<AuthUser> ConnectUser(Pseudo pseudo, Password password)
+        {
+            var user = await _dbSet.Where(au => au.Pseudo.ToLower() == pseudo.ToString().ToLower() && au.Password == password.ToString()).SingleOrDefaultAsync();
+
+            return _mapper.Map<AuthUser>(user);
         }
 
         #region Private Methods

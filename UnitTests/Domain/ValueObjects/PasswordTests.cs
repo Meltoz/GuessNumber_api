@@ -454,5 +454,80 @@ namespace UnitTests.Domain.ValueObjects
         }
 
         #endregion
+
+        #region FromHash Tests - Cas Nominaux
+
+        [Fact]
+        public void FromHash_WithValidHash_ShouldCreatePassword()
+        {
+            // Arrange
+            var hash = "A1B2C3D4E5F6";
+
+            // Act
+            var password = Password.FromHash(hash);
+
+            // Assert
+            Assert.NotNull(password);
+            Assert.Equal(hash, password.ToString());
+        }
+
+        [Fact]
+        public void FromHash_ShouldNotRehashTheValue()
+        {
+            // Arrange
+            var originalPassword = Password.Create("Password1@");
+            var hash = originalPassword.ToString();
+
+            // Act
+            var fromHash = Password.FromHash(hash);
+
+            // Assert
+            Assert.Equal(hash, fromHash.ToString());
+            Assert.Equal(originalPassword, fromHash);
+        }
+
+        [Fact]
+        public void FromHash_ThenFromHash_ShouldBeIdempotent()
+        {
+            // Arrange
+            var hash = Password.Create("Password1@").ToString();
+
+            // Act
+            var first = Password.FromHash(hash);
+            var second = Password.FromHash(first.ToString());
+
+            // Assert
+            Assert.Equal(first.ToString(), second.ToString());
+        }
+
+        #endregion
+
+        #region FromHash Tests - Cas Limites et Erreurs
+
+        [Fact]
+        public void FromHash_WithNullValue_ShouldThrowArgumentException()
+        {
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentException>(() => Password.FromHash(null));
+            Assert.Equal("Password can't be empty", exception.Message);
+        }
+
+        [Fact]
+        public void FromHash_WithEmptyValue_ShouldThrowArgumentException()
+        {
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentException>(() => Password.FromHash(""));
+            Assert.Equal("Password can't be empty", exception.Message);
+        }
+
+        [Fact]
+        public void FromHash_WithWhitespaceValue_ShouldThrowArgumentException()
+        {
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentException>(() => Password.FromHash("   "));
+            Assert.Equal("Password can't be empty", exception.Message);
+        }
+
+        #endregion
     }
 }

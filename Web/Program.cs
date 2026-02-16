@@ -16,6 +16,8 @@ namespace Web
             var services = builder.Services;
             var env = builder.Environment.EnvironmentName;
             services.Configure<DatabaseConfiguration>(builder.Configuration.GetSection("ConnectionStrings"));
+            services.Configure<AuthConfiguration>(builder.Configuration.GetSection("Auth"));
+            services.Configure<EncryptionConfiguration>(builder.Configuration.GetSection("Encryption"));
 
             if (env != "Testing")
             {
@@ -53,8 +55,8 @@ namespace Web
             services.AddSwaggerGen();
 
             // Configure DI Service
-            services.AddInfrastructure(builder.Configuration, env);
             services.AddApplication();
+            services.AddInfrastructure(builder.Configuration, env);
             services.AddAutoMapper(cfg => { }, typeof(ViewModelToDomainProfile), typeof(DomainToViewModelProfile));
 
 
@@ -68,6 +70,7 @@ namespace Web
                 app.UseSwaggerUI();
             }
 
+            //Application des migrationsAhh
             if (!app.Environment.IsEnvironment("Testing"))
             {
                 using var scope = app.Services.CreateScope();

@@ -1,4 +1,6 @@
-﻿using Infrastructure.Entities;
+﻿using Application.Services;
+using Infrastructure.Converters;
+using Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 
@@ -7,6 +9,7 @@ namespace Infrastructure
     public class GuessNumberContext : DbContext
     {
         private readonly bool _disableTimestamps;
+        private readonly AesEncryptionService? _encryptionService;
 
         public DbSet<ActualityEntity> Actualities { get; set; }
 
@@ -24,16 +27,19 @@ namespace Infrastructure
 
         public DbSet<AuthUserEntity> AuthUsers { get; set; }
 
+        public DbSet<TokenEntity> Tokens { get; set; }
+
 
         public GuessNumberContext()
         {
 
         }
 
-        public GuessNumberContext(DbContextOptions<GuessNumberContext> options, bool disableTimestamps = false)
+        public GuessNumberContext(DbContextOptions<GuessNumberContext> options, AesEncryptionService encryptionService = null, bool disableTimestamps = false)
        : base(options)
         {
             _disableTimestamps = disableTimestamps;
+            _encryptionService = encryptionService;
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -81,6 +87,28 @@ namespace Infrastructure
                 .HasValue<UserEntity>(false)
                 .HasValue<AuthUserEntity>(true);
             });
+
+            modelBuilder.Entity<AuthUserEntity>(entity =>
+            {
+                entity.HasMany(au => au.Tokens)
+                .WithOne(t => t.User)
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            if (_encryptionService is not null)
+            {
+                var tokenConverter = new TokenValueConverter(_encryptionService, null);
+
+                modelBuilder.Entity<TokenEntity>(entity =>
+                {
+                    entity.Property(t => t.AccessToken)
+                    .HasConversion(tokenConverter);
+
+                    entity.Property(t => t.RefreshToken)
+                    .HasConversion(tokenConverter);
+                });
+            }
 
         }
 

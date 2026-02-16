@@ -3,6 +3,7 @@ using Application.Interfaces.Repository;
 using Application.Services;
 using Domain.Enums;
 using Domain.User;
+using Domain.ValueObjects;
 using Moq;
 using Shared;
 using Shared.Enums.Sorting;
@@ -1794,7 +1795,7 @@ namespace UnitTests.Application
             // Arrange
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
-            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<string>())).ReturnsAsync(true);
+            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<Pseudo>())).ReturnsAsync(true);
 
             var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
 
@@ -1802,7 +1803,7 @@ namespace UnitTests.Application
             await service.IsPseudoAvailable("TestUser");
 
             // Assert
-            authUserRepoMock.Verify(r => r.CheckAvailablePseudo("TestUser"), Times.Once);
+            authUserRepoMock.Verify(r => r.CheckAvailablePseudo(It.IsAny<Pseudo>()), Times.Once);
         }
 
         [Fact]
@@ -1811,7 +1812,7 @@ namespace UnitTests.Application
             // Arrange
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
-            authUserRepoMock.Setup(r => r.CheckAvailablePseudo("NewUser")).ReturnsAsync(true);
+            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<Pseudo>())).ReturnsAsync(true);
 
             var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
 
@@ -1828,7 +1829,7 @@ namespace UnitTests.Application
             // Arrange
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
-            authUserRepoMock.Setup(r => r.CheckAvailablePseudo("ExistingUser")).ReturnsAsync(false);
+            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<Pseudo>())).ReturnsAsync(false);
 
             var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
 
@@ -1843,20 +1844,20 @@ namespace UnitTests.Application
         public async Task IsPseudoAvailable_ShouldPassExactPseudoToRepository()
         {
             // Arrange
-            string capturedPseudo = null;
+            Pseudo capturedPseudo = null;
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
-            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<string>()))
-                .Callback<string>(p => capturedPseudo = p)
+            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<Pseudo>()))
+                .Callback<Pseudo>(p => capturedPseudo = p)
                 .ReturnsAsync(true);
 
             var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
 
             // Act
-            await service.IsPseudoAvailable("  SpacedPseudo  ");
+            await service.IsPseudoAvailable("SpacedPseudo");
 
             // Assert
-            Assert.Equal("  SpacedPseudo  ", capturedPseudo);
+            Assert.Equal("SpacedPseudo", capturedPseudo.Value);
         }
 
         [Fact]
@@ -1865,7 +1866,7 @@ namespace UnitTests.Application
             // Arrange
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
-            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<string>()))
+            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<Pseudo>()))
                 .ThrowsAsync(new Exception("Database error"));
 
             var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
@@ -1880,7 +1881,7 @@ namespace UnitTests.Application
             // Arrange
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
-            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<string>())).ReturnsAsync(true);
+            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<Pseudo>())).ReturnsAsync(true);
 
             var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
 
@@ -1897,7 +1898,7 @@ namespace UnitTests.Application
             // Arrange
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
-            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<string>())).ReturnsAsync(true);
+            authUserRepoMock.Setup(r => r.CheckAvailablePseudo(It.IsAny<Pseudo>())).ReturnsAsync(true);
 
             var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
 
@@ -1905,7 +1906,7 @@ namespace UnitTests.Application
             await service.IsPseudoAvailable("TestUser");
 
             // Assert
-            authUserRepoMock.Verify(r => r.CheckAvailablePseudo("TestUser"), Times.Once);
+            authUserRepoMock.Verify(r => r.CheckAvailablePseudo(It.IsAny<Pseudo>()), Times.Once);
             authUserRepoMock.Verify(r => r.InsertAsync(It.IsAny<AuthUser>()), Times.Never);
             authUserRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
         }
@@ -1920,7 +1921,7 @@ namespace UnitTests.Application
             // Arrange
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
-            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<string>())).ReturnsAsync(true);
+            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<Mail>())).ReturnsAsync(true);
 
             var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
 
@@ -1928,7 +1929,7 @@ namespace UnitTests.Application
             await service.IsMailAvailable("test@example.com");
 
             // Assert
-            authUserRepoMock.Verify(r => r.CheckAvailableMail("test@example.com"), Times.Once);
+            authUserRepoMock.Verify(r => r.CheckAvailableMail(It.IsAny<Mail>()), Times.Once);
         }
 
         [Fact]
@@ -1937,7 +1938,7 @@ namespace UnitTests.Application
             // Arrange
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
-            authUserRepoMock.Setup(r => r.CheckAvailableMail("new@example.com")).ReturnsAsync(true);
+            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<Mail>())).ReturnsAsync(true);
 
             var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
 
@@ -1954,7 +1955,7 @@ namespace UnitTests.Application
             // Arrange
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
-            authUserRepoMock.Setup(r => r.CheckAvailableMail("taken@example.com")).ReturnsAsync(false);
+            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<Mail>())).ReturnsAsync(false);
 
             var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
 
@@ -1969,11 +1970,11 @@ namespace UnitTests.Application
         public async Task IsMailAvailable_ShouldPassExactMailToRepository()
         {
             // Arrange
-            string capturedMail = null;
+            Mail capturedMail = null;
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
-            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<string>()))
-                .Callback<string>(m => capturedMail = m)
+            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<Mail>()))
+                .Callback<Mail>(m => capturedMail = m)
                 .ReturnsAsync(true);
 
             var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
@@ -1982,7 +1983,7 @@ namespace UnitTests.Application
             await service.IsMailAvailable("Test@Example.COM");
 
             // Assert
-            Assert.Equal("Test@Example.COM", capturedMail);
+            Assert.Equal("Test@Example.COM", (string)capturedMail);
         }
 
         [Fact]
@@ -1991,7 +1992,7 @@ namespace UnitTests.Application
             // Arrange
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
-            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<string>()))
+            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<Mail>()))
                 .ThrowsAsync(new Exception("Database error"));
 
             var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
@@ -2006,7 +2007,7 @@ namespace UnitTests.Application
             // Arrange
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
-            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<string>())).ReturnsAsync(true);
+            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<Mail>())).ReturnsAsync(true);
 
             var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
 
@@ -2023,7 +2024,7 @@ namespace UnitTests.Application
             // Arrange
             var userRepoMock = new Mock<IUserRepository>();
             var authUserRepoMock = new Mock<IAuthUserRepository>();
-            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<string>())).ReturnsAsync(true);
+            authUserRepoMock.Setup(r => r.CheckAvailableMail(It.IsAny<Mail>())).ReturnsAsync(true);
 
             var service = new UserService(userRepoMock.Object, authUserRepoMock.Object);
 
@@ -2031,7 +2032,7 @@ namespace UnitTests.Application
             await service.IsMailAvailable("test@example.com");
 
             // Assert
-            authUserRepoMock.Verify(r => r.CheckAvailableMail("test@example.com"), Times.Once);
+            authUserRepoMock.Verify(r => r.CheckAvailableMail(It.IsAny<Mail>()), Times.Once);
             authUserRepoMock.Verify(r => r.InsertAsync(It.IsAny<AuthUser>()), Times.Never);
             authUserRepoMock.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
         }
