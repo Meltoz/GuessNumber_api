@@ -1,9 +1,7 @@
 ﻿using Application.Services;
 using AutoMapper;
 using Domain.User;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Shared.Configuration;
@@ -80,6 +78,33 @@ namespace Web.Controllers
         [HttpDelete]
         public async Task<IActionResult> Logout()
         {
+            var token = Request.Cookies[ApiConstants.AccessTokenCookieName];
+
+            if (string.IsNullOrWhiteSpace(token))
+                return BadRequest();
+
+            var claimPrincipal = GetPrincipalFromExpiredToken(token);
+
+            if (claimPrincipal is null)
+                return Unauthorized(new ProblemDetails
+                {
+                    Title = "Invalid token",
+                    Detail = "The accesstoken is invalid or malformed",
+                    Instance = HttpContext.TraceIdentifier
+                });
+
+            if (!Guid.TryParse(claimPrincipal.FindFirstValue(JwtRegisteredClaimNames.Jti), out var tokenId))
+                return Unauthorized(new ProblemDetails
+                {
+                    Title = "Invalid token",
+                    Detail = "The accesstoken is invalid or malformed",
+                    Instance = HttpContext.TraceIdentifier
+                });
+
+            await _tokenService.RevokeTokenById(tokenId);
+
+            Response.DeleteCookie(ApiConstants.AccessTokenCookieName, httpOnly: false, secure: true);
+            Response.DeleteCookie(ApiConstants.RefreshTokenCookieName);
             return Ok();
         }
 
