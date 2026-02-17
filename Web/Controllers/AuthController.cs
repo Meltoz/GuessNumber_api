@@ -111,6 +111,34 @@ namespace Web.Controllers
         [HttpDelete]
         public async Task<IActionResult> LogoutAllDevice()
         {
+            var token = Request.Cookies[ApiConstants.AccessTokenCookieName];
+
+            if (string.IsNullOrWhiteSpace(token))
+                return BadRequest();
+
+            var claimPrincipal = GetPrincipalFromExpiredToken(token);
+
+            if (claimPrincipal is null)
+                return Unauthorized(new ProblemDetails
+                {
+                    Title = "Invalid token",
+                    Detail = "The accesstoken is invalid or malformed",
+                    Instance = HttpContext.TraceIdentifier
+                });
+
+            if (!Guid.TryParse(claimPrincipal.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+                return Unauthorized(new ProblemDetails
+                {
+                    Title = "Invalid token",
+                    Detail = "The accesstoken is invalid or malformed",
+                    Instance = HttpContext.TraceIdentifier
+                });
+
+            await _tokenService.RevokeAllTokens(userId);
+
+            Response.DeleteCookie(ApiConstants.AccessTokenCookieName, httpOnly: false, secure: true);
+            Response.DeleteCookie(ApiConstants.RefreshTokenCookieName);
+
             return Ok();
         }
 
