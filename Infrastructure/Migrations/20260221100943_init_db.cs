@@ -146,7 +146,6 @@ namespace Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    AccessToken = table.Column<string>(type: "text", nullable: false),
                     RefreshToken = table.Column<string>(type: "text", nullable: false),
                     IsRevoked = table.Column<bool>(type: "boolean", nullable: false),
                     AccessExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),

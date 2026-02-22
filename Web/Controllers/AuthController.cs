@@ -1,4 +1,5 @@
-﻿using Application.Services;
+﻿using Application.Exceptions;
+using Application.Services;
 using AutoMapper;
 using Domain.User;
 using Microsoft.AspNetCore.Mvc;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Shared.Configuration;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -63,8 +65,8 @@ namespace Web.Controllers
             };
 
             var token = await _tokenService.CreateTokenAsync(userFinded, claims, userAgent.ToString(), ipAddress);
-            Response.AppendCookie(ApiConstants.AccessTokenCookieName, token.AccessToken.ToString(), TimeSpan.FromMinutes(30), httpOnly: false);
-            Response.AppendCookie(ApiConstants.RefreshTokenCookieName, token.RefreshToken.ToString(), TimeSpan.FromDays(30));
+            Response.AppendCookie(ApiConstants.AccessTokenCookieName, token.Item1.ToString(), TimeSpan.FromMinutes(30), httpOnly: false);
+            Response.AppendCookie(ApiConstants.RefreshTokenCookieName, token.Item2.RefreshToken.ToString(), TimeSpan.FromDays(30));
             
             return Ok();
         }
@@ -72,6 +74,61 @@ namespace Web.Controllers
         [HttpPut]
         public async Task<IActionResult> Refresh()
         {
+            var refreshToken = Request.Cookies[ApiConstants.RefreshTokenCookieName];
+
+            if(string.IsNullOrWhiteSpace(refreshToken))
+                return Unauthorized(new ProblemDetails
+                {
+                    Title = "Invalid token",
+                    Detail = "The accesstoken is invalid or malformed",
+                    Instance = HttpContext.TraceIdentifier
+                });
+            
+            TokenInfo token;
+            try
+            {
+                token = await _tokenService.GetByRefreshToken(refreshToken);
+            }
+            catch (EntityNotFoundException)
+            {
+                return Unauthorized();
+            }
+
+            if (token.IsRevoked ||
+                token.IsRefreshExpires() || token.IsAccessExpires() ||
+                token.RefreshToken != refreshToken )   
+            {
+                try
+                {
+                    await _tokenService.RevokeTokenById(token.Id);
+                }
+                catch(InvalidOperationException)
+                {
+                    // LOG
+                }
+                Response.DeleteCookie(ApiConstants.AccessTokenCookieName, httpOnly: false, secure: true);
+                Response.DeleteCookie(ApiConstants.RefreshTokenCookieName);
+                return Unauthorized();
+            }
+
+            await _tokenService.RevokeTokenById(token.Id);
+
+            var user = await _userService.GetDetail(token.User.Id) as AuthUser;
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Role, user.Role.ToString()),
+                new Claim(ClaimTypes.Name, user.Pseudo.ToString()),
+            };
+
+            var userAgent = Request.Headers.UserAgent;
+            var ipAddress = HttpContext.Connection.RemoteIpAddress;
+
+            var newToken = await _tokenService.CreateTokenAsync(token.User, claims, userAgent.ToString(), ipAddress);
+
+            Response.AppendCookie(ApiConstants.AccessTokenCookieName, newToken.Item1.ToString(), TimeSpan.FromMinutes(30), httpOnly: false);
+            Response.AppendCookie(ApiConstants.RefreshTokenCookieName, newToken.Item2.RefreshToken.ToString(), TimeSpan.FromDays(30));
             return Ok();
         }
 
@@ -101,7 +158,14 @@ namespace Web.Controllers
                     Instance = HttpContext.TraceIdentifier
                 });
 
-            await _tokenService.RevokeTokenById(tokenId);
+            try
+            {
+                await _tokenService.RevokeTokenById(tokenId);
+            }
+            catch (InvalidOperationException)
+            {
+                // LOG
+            }
 
             Response.DeleteCookie(ApiConstants.AccessTokenCookieName, httpOnly: false, secure: true);
             Response.DeleteCookie(ApiConstants.RefreshTokenCookieName);

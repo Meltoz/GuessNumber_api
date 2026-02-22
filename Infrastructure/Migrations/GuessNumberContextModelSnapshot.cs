@@ -217,10 +217,6 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("AccessExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("AccessToken")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("Created")
                         .HasColumnType("timestamp with time zone");
 

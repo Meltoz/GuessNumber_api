@@ -39,6 +39,17 @@ namespace UnitTests.Application
             return new AuthUser(Guid.NewGuid(), "TestUser", "avatar.png", "test@example.com", "Password1@", RoleUser.User);
         }
 
+        private TokenInfo CreateTokenInfo(Guid? id = null)
+        {
+            var user = CreateTestUser();
+            return new TokenInfo(
+                id ?? Guid.NewGuid(),
+                "refresh-token",
+                DateTime.UtcNow.AddDays(30),
+                DateTime.UtcNow.AddMinutes(30),
+                user, "Chrome", IPAddress.Loopback);
+        }
+
         #region CreateTokenAsync Tests
 
         [Fact]
@@ -61,7 +72,7 @@ namespace UnitTests.Application
         }
 
         [Fact]
-        public async Task CreateTokenAsync_ShouldReturnTokenInfo()
+        public async Task CreateTokenAsync_ShouldReturnTupleWithAccessTokenAndTokenInfo()
         {
             // Arrange
             var user = CreateTestUser();
@@ -73,15 +84,16 @@ namespace UnitTests.Application
                 .ReturnsAsync((TokenInfo t) => t);
 
             // Act
-            var result = await _service.CreateTokenAsync(user, claims, device, ip);
+            var (accessToken, tokenInfo) = await _service.CreateTokenAsync(user, claims, device, ip);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.IsType<TokenInfo>(result);
+            Assert.False(string.IsNullOrWhiteSpace(accessToken));
+            Assert.NotNull(tokenInfo);
+            Assert.IsType<TokenInfo>(tokenInfo);
         }
 
         [Fact]
-        public async Task CreateTokenAsync_ShouldSetAccessToken()
+        public async Task CreateTokenAsync_ShouldReturnNonEmptyAccessToken()
         {
             // Arrange
             var user = CreateTestUser();
@@ -89,18 +101,14 @@ namespace UnitTests.Application
             var device = "Chrome";
             var ip = IPAddress.Parse("127.0.0.1");
 
-            TokenInfo capturedToken = null;
             _tokenRepoMock.Setup(r => r.InsertAsync(It.IsAny<TokenInfo>()))
-                .Callback<TokenInfo>(t => capturedToken = t)
                 .ReturnsAsync((TokenInfo t) => t);
 
             // Act
-            await _service.CreateTokenAsync(user, claims, device, ip);
+            var (accessToken, _) = await _service.CreateTokenAsync(user, claims, device, ip);
 
             // Assert
-            Assert.NotNull(capturedToken);
-            Assert.NotNull(capturedToken.AccessToken);
-            Assert.False(string.IsNullOrWhiteSpace(capturedToken.AccessToken.Value));
+            Assert.False(string.IsNullOrWhiteSpace(accessToken));
         }
 
         [Fact]
@@ -273,18 +281,15 @@ namespace UnitTests.Application
             var device = "Chrome";
             var ip = IPAddress.Parse("127.0.0.1");
 
-            TokenInfo capturedToken = null;
             _tokenRepoMock.Setup(r => r.InsertAsync(It.IsAny<TokenInfo>()))
-                .Callback<TokenInfo>(t => capturedToken = t)
                 .ReturnsAsync((TokenInfo t) => t);
 
             // Act
-            await _service.CreateTokenAsync(user, claims, device, ip);
+            var (accessToken, _) = await _service.CreateTokenAsync(user, claims, device, ip);
 
             // Assert
-            Assert.NotNull(capturedToken);
             var handler = new JwtSecurityTokenHandler();
-            var jwt = handler.ReadJwtToken(capturedToken.AccessToken.Value);
+            var jwt = handler.ReadJwtToken(accessToken);
             Assert.Contains(jwt.Claims, c => c.Type == JwtRegisteredClaimNames.Jti);
         }
 
@@ -325,12 +330,12 @@ namespace UnitTests.Application
                 .ReturnsAsync((TokenInfo t) => t);
 
             // Act
-            await _service.CreateTokenAsync(user, claims, device, ip);
+            var (accessToken, _) = await _service.CreateTokenAsync(user, claims, device, ip);
 
             // Assert
             Assert.NotNull(capturedToken);
             var handler = new JwtSecurityTokenHandler();
-            var jwt = handler.ReadJwtToken(capturedToken.AccessToken.Value);
+            var jwt = handler.ReadJwtToken(accessToken);
             var jtiClaim = jwt.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti);
             Assert.Equal(capturedToken.Id.ToString(), jtiClaim.Value);
         }
@@ -344,18 +349,15 @@ namespace UnitTests.Application
             var device = "Chrome";
             var ip = IPAddress.Parse("127.0.0.1");
 
-            TokenInfo capturedToken = null;
             _tokenRepoMock.Setup(r => r.InsertAsync(It.IsAny<TokenInfo>()))
-                .Callback<TokenInfo>(t => capturedToken = t)
                 .ReturnsAsync((TokenInfo t) => t);
 
             // Act
-            await _service.CreateTokenAsync(user, claims, device, ip);
+            var (accessToken, _) = await _service.CreateTokenAsync(user, claims, device, ip);
 
             // Assert
-            Assert.NotNull(capturedToken);
             var handler = new JwtSecurityTokenHandler();
-            Assert.True(handler.CanReadToken(capturedToken.AccessToken.Value));
+            Assert.True(handler.CanReadToken(accessToken));
         }
 
         [Fact]
@@ -430,86 +432,31 @@ namespace UnitTests.Application
         }
 
         [Fact]
-        public async Task RevokeAllTokens_ShouldCallGetTokens()
+        public async Task RevokeAllTokens_ShouldCallRevokeAllAsync()
         {
             // Arrange
             var userId = Guid.NewGuid();
-            _tokenRepoMock.Setup(r => r.GetTokens(userId))
-                .ReturnsAsync(Enumerable.Empty<TokenInfo>());
+            _tokenRepoMock.Setup(r => r.RevokeAllAsync(userId)).Returns(Task.CompletedTask);
 
             // Act
             await _service.RevokeAllTokens(userId);
 
             // Assert
-            _tokenRepoMock.Verify(r => r.GetTokens(userId), Times.Once);
+            _tokenRepoMock.Verify(r => r.RevokeAllAsync(userId), Times.Once);
         }
 
         [Fact]
-        public async Task RevokeAllTokens_ShouldRevokeEachToken()
+        public async Task RevokeAllTokens_ShouldNotCallGetTokens()
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var user = CreateTestUser();
-            var token1 = new TokenInfo(
-                Guid.NewGuid(), "access1", "refresh1",
-                DateTime.UtcNow.AddDays(30), DateTime.UtcNow.AddMinutes(30),
-                user, "Chrome", IPAddress.Loopback);
-            var token2 = new TokenInfo(
-                Guid.NewGuid(), "access2", "refresh2",
-                DateTime.UtcNow.AddDays(30), DateTime.UtcNow.AddMinutes(30),
-                user, "Firefox", IPAddress.Loopback);
-
-            _tokenRepoMock.Setup(r => r.GetTokens(userId))
-                .ReturnsAsync(new[] { token1, token2 });
+            _tokenRepoMock.Setup(r => r.RevokeAllAsync(userId)).Returns(Task.CompletedTask);
 
             // Act
             await _service.RevokeAllTokens(userId);
 
             // Assert
-            Assert.True(token1.IsRevoked);
-            Assert.True(token2.IsRevoked);
-        }
-
-        [Fact]
-        public async Task RevokeAllTokens_ShouldCallUpdateWithOutSaveForEachToken()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            var user = CreateTestUser();
-            var token1 = new TokenInfo(
-                Guid.NewGuid(), "access1", "refresh1",
-                DateTime.UtcNow.AddDays(30), DateTime.UtcNow.AddMinutes(30),
-                user, "Chrome", IPAddress.Loopback);
-            var token2 = new TokenInfo(
-                Guid.NewGuid(), "access2", "refresh2",
-                DateTime.UtcNow.AddDays(30), DateTime.UtcNow.AddMinutes(30),
-                user, "Firefox", IPAddress.Loopback);
-
-            _tokenRepoMock.Setup(r => r.GetTokens(userId))
-                .ReturnsAsync(new[] { token1, token2 });
-
-            // Act
-            await _service.RevokeAllTokens(userId);
-
-            // Assert
-            _tokenRepoMock.Verify(r => r.UpdateWithOutSaveAsync(It.IsAny<TokenInfo>()), Times.Exactly(2));
-            _tokenRepoMock.Verify(r => r.SaveAsync(), Times.Once);
-        }
-
-        [Fact]
-        public async Task RevokeAllTokens_WithNoTokens_ShouldStillCallSave()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            _tokenRepoMock.Setup(r => r.GetTokens(userId))
-                .ReturnsAsync(Enumerable.Empty<TokenInfo>());
-
-            // Act
-            await _service.RevokeAllTokens(userId);
-
-            // Assert
-            _tokenRepoMock.Verify(r => r.UpdateWithOutSaveAsync(It.IsAny<TokenInfo>()), Times.Never);
-            _tokenRepoMock.Verify(r => r.SaveAsync(), Times.Once);
+            _tokenRepoMock.Verify(r => r.GetTokens(It.IsAny<Guid>()), Times.Never);
         }
 
         #endregion
@@ -537,49 +484,37 @@ namespace UnitTests.Application
         }
 
         [Fact]
-        public async Task RevokeTokenById_ShouldRevokeToken()
+        public async Task RevokeTokenById_ShouldCallRevokeAsync()
         {
             // Arrange
-            var user = CreateTestUser();
             var tokenId = Guid.NewGuid();
-            var token = new TokenInfo(
-                tokenId, "access", "refresh",
-                DateTime.UtcNow.AddDays(30), DateTime.UtcNow.AddMinutes(30),
-                user, "Chrome", IPAddress.Loopback);
+            var token = CreateTokenInfo(tokenId);
 
-            _tokenRepoMock.Setup(r => r.GetByIdAsync(tokenId))
-                .ReturnsAsync(token);
-            _tokenRepoMock.Setup(r => r.UpdateAsync(It.IsAny<TokenInfo>()))
-                .ReturnsAsync((TokenInfo t) => t);
+            _tokenRepoMock.Setup(r => r.GetByIdAsync(tokenId)).ReturnsAsync(token);
+            _tokenRepoMock.Setup(r => r.RevokeAsync(tokenId)).Returns(Task.CompletedTask);
 
             // Act
             await _service.RevokeTokenById(tokenId);
 
             // Assert
-            Assert.True(token.IsRevoked);
+            _tokenRepoMock.Verify(r => r.RevokeAsync(tokenId), Times.Once);
         }
 
         [Fact]
-        public async Task RevokeTokenById_ShouldCallUpdateAsync()
+        public async Task RevokeTokenById_ShouldNotCallUpdateAsync()
         {
             // Arrange
-            var user = CreateTestUser();
             var tokenId = Guid.NewGuid();
-            var token = new TokenInfo(
-                tokenId, "access", "refresh",
-                DateTime.UtcNow.AddDays(30), DateTime.UtcNow.AddMinutes(30),
-                user, "Chrome", IPAddress.Loopback);
+            var token = CreateTokenInfo(tokenId);
 
-            _tokenRepoMock.Setup(r => r.GetByIdAsync(tokenId))
-                .ReturnsAsync(token);
-            _tokenRepoMock.Setup(r => r.UpdateAsync(It.IsAny<TokenInfo>()))
-                .ReturnsAsync((TokenInfo t) => t);
+            _tokenRepoMock.Setup(r => r.GetByIdAsync(tokenId)).ReturnsAsync(token);
+            _tokenRepoMock.Setup(r => r.RevokeAsync(tokenId)).Returns(Task.CompletedTask);
 
             // Act
             await _service.RevokeTokenById(tokenId);
 
             // Assert
-            _tokenRepoMock.Verify(r => r.UpdateAsync(It.IsAny<TokenInfo>()), Times.Once);
+            _tokenRepoMock.Verify(r => r.UpdateAsync(It.IsAny<TokenInfo>()), Times.Never);
         }
 
         #endregion
@@ -619,83 +554,33 @@ namespace UnitTests.Application
         }
 
         [Fact]
-        public async Task RevokeSpecificTokens_ShouldCallGetTokensWithDeviceName()
+        public async Task RevokeSpecificTokens_ShouldCallRevokeAllAsync()
         {
             // Arrange
             var userId = Guid.NewGuid();
             var deviceName = "Chrome";
-            _tokenRepoMock.Setup(r => r.GetTokens(userId, deviceName))
-                .ReturnsAsync(Enumerable.Empty<TokenInfo>());
+            _tokenRepoMock.Setup(r => r.RevokeAllAsync(userId, deviceName)).Returns(Task.CompletedTask);
 
             // Act
             await _service.RevokeSpecificTokens(userId, deviceName);
 
             // Assert
-            _tokenRepoMock.Verify(r => r.GetTokens(userId, deviceName), Times.Once);
+            _tokenRepoMock.Verify(r => r.RevokeAllAsync(userId, deviceName), Times.Once);
         }
 
         [Fact]
-        public async Task RevokeSpecificTokens_ShouldRevokeAllMatchingTokens()
+        public async Task RevokeSpecificTokens_ShouldNotCallGetTokens()
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var user = CreateTestUser();
-            var token1 = new TokenInfo(
-                Guid.NewGuid(), "access1", "refresh1",
-                DateTime.UtcNow.AddDays(30), DateTime.UtcNow.AddMinutes(30),
-                user, "Chrome", IPAddress.Loopback);
-            var token2 = new TokenInfo(
-                Guid.NewGuid(), "access2", "refresh2",
-                DateTime.UtcNow.AddDays(30), DateTime.UtcNow.AddMinutes(30),
-                user, "Chrome", IPAddress.Loopback);
-
-            _tokenRepoMock.Setup(r => r.GetTokens(userId, "Chrome"))
-                .ReturnsAsync(new[] { token1, token2 });
+            var deviceName = "Chrome";
+            _tokenRepoMock.Setup(r => r.RevokeAllAsync(userId, deviceName)).Returns(Task.CompletedTask);
 
             // Act
-            await _service.RevokeSpecificTokens(userId, "Chrome");
+            await _service.RevokeSpecificTokens(userId, deviceName);
 
             // Assert
-            Assert.True(token1.IsRevoked);
-            Assert.True(token2.IsRevoked);
-        }
-
-        [Fact]
-        public async Task RevokeSpecificTokens_ShouldCallUpdateWithOutSaveAndSave()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            var user = CreateTestUser();
-            var token = new TokenInfo(
-                Guid.NewGuid(), "access", "refresh",
-                DateTime.UtcNow.AddDays(30), DateTime.UtcNow.AddMinutes(30),
-                user, "Chrome", IPAddress.Loopback);
-
-            _tokenRepoMock.Setup(r => r.GetTokens(userId, "Chrome"))
-                .ReturnsAsync(new[] { token });
-
-            // Act
-            await _service.RevokeSpecificTokens(userId, "Chrome");
-
-            // Assert
-            _tokenRepoMock.Verify(r => r.UpdateWithOutSaveAsync(It.IsAny<TokenInfo>()), Times.Once);
-            _tokenRepoMock.Verify(r => r.SaveAsync(), Times.Once);
-        }
-
-        [Fact]
-        public async Task RevokeSpecificTokens_WithNoMatchingTokens_ShouldStillCallSave()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            _tokenRepoMock.Setup(r => r.GetTokens(userId, "Safari"))
-                .ReturnsAsync(Enumerable.Empty<TokenInfo>());
-
-            // Act
-            await _service.RevokeSpecificTokens(userId, "Safari");
-
-            // Assert
-            _tokenRepoMock.Verify(r => r.UpdateWithOutSaveAsync(It.IsAny<TokenInfo>()), Times.Never);
-            _tokenRepoMock.Verify(r => r.SaveAsync(), Times.Once);
+            _tokenRepoMock.Verify(r => r.GetTokens(It.IsAny<Guid>(), It.IsAny<string>()), Times.Never);
         }
 
         #endregion

@@ -1,6 +1,8 @@
 ﻿using Application.Exceptions;
 using Application.Interfaces.Repository;
 using Domain.User;
+using Domain.ValueObjects;
+using Microsoft.Win32.SafeHandles;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
@@ -15,7 +17,7 @@ namespace Application.Services
         private readonly static int daysRefreshExpire = 30;
         private readonly static int accessExpires = 30;
 
-        public async Task<TokenInfo> CreateTokenAsync(AuthUser user, IList<Claim> claims, string device, IPAddress ipAddress)
+        public async Task<Tuple<string, TokenInfo>> CreateTokenAsync(AuthUser user, IList<Claim> claims, string device, IPAddress ipAddress)
         {
             var expires = DateTime.UtcNow.AddDays(daysRefreshExpire);
             var expiresAccess = DateTime.UtcNow.AddMinutes(accessExpires);
@@ -26,9 +28,11 @@ namespace Application.Services
             var accessToken = _jwtService.CreateAccessToken(claims, expiresAccess);
             var refreshToken = _jwtService.GenerateRefreshToken();
 
-            var token = new TokenInfo(id, accessToken, refreshToken, expires, expiresAccess, user, device, ipAddress); 
+            var token = new TokenInfo(id, refreshToken, expires, expiresAccess, user, device, ipAddress);
+            var tokenInserted = await _tokenRepository.InsertAsync(token);
 
-            return await _tokenRepository.InsertAsync(token);
+            return new (accessToken, tokenInserted);
+            
         }
 
         public async Task RevokeAllTokens(Guid userId)
@@ -36,15 +40,7 @@ namespace Application.Services
             if (userId == Guid.Empty)
                 throw new ArgumentNullException(nameof(userId));
 
-            var tokens = await _tokenRepository.GetTokens(userId);
-
-            foreach (var token in tokens)
-            {
-                token.RevokeToken();
-                await _tokenRepository.UpdateWithOutSaveAsync(token);
-            }
-
-            await _tokenRepository.SaveAsync();
+            await _tokenRepository.RevokeAllAsync(userId);
         }
 
         public async Task RevokeTokenById(Guid tokenId)
@@ -52,13 +48,12 @@ namespace Application.Services
             if(tokenId == Guid.Empty)
                 throw new ArgumentNullException(nameof(tokenId));
 
-            var token = await _tokenRepository.GetByIdAsync(tokenId);
+            var exists = await _tokenRepository.GetByIdAsync(tokenId);
 
-            if (token is null)
+            if (exists is null)
                 throw new EntityNotFoundException(tokenId);
 
-            token.RevokeToken();
-            await _tokenRepository.UpdateAsync(token);
+            await _tokenRepository.RevokeAsync(tokenId);
         }
 
         public async Task RevokeSpecificTokens(Guid userId, string deviceName)
@@ -69,16 +64,28 @@ namespace Application.Services
             if(string.IsNullOrWhiteSpace(deviceName))
                 throw new ArgumentNullException(nameof(deviceName));
 
+            await _tokenRepository.RevokeAllAsync(userId, deviceName);
+        }
 
-            var tokens = await _tokenRepository.GetTokens(userId, deviceName);
+        public async Task<TokenInfo> GetByIdAsync(Guid id)
+        {
+            var token  = await _tokenRepository.GetByIdWithUserAsync(id);
 
-            foreach(var token in tokens)
-            {
-                token.RevokeToken();
-                await _tokenRepository.UpdateWithOutSaveAsync(token);
-            }
+            if (token is null)
+                throw new EntityNotFoundException(id);
 
-            await _tokenRepository.SaveAsync();
+            return token;
+        }
+
+        public async Task<TokenInfo> GetByRefreshToken(string refreshToken)
+        {
+            var refresh = Token.Create(refreshToken);
+            var token = await _tokenRepository.GetByRefreshToken(refresh);
+
+            if (token is null)
+                throw new EntityNotFoundException("Token was not found");
+
+            return token;
         }
     }
 }

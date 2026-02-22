@@ -48,6 +48,21 @@ namespace IntegrationTests.Web
             };
         }
 
+        private TokenEntity CreateTokenEntity(Guid userId, string device = "Chrome", bool isRevoked = false, string refreshToken = null)
+        {
+            return new TokenEntity
+            {
+                RefreshToken = refreshToken ?? "refresh-token-" + Guid.NewGuid(),
+                IsRevoked = isRevoked,
+                AccessExpiresAt = DateTime.UtcNow.AddMinutes(30),
+                RefreshExpiresAt = DateTime.UtcNow.AddDays(30),
+                DeviceName = device,
+                IpAddress = "127.0.0.1",
+                UserId = userId,
+                Created = DateTime.UtcNow
+            };
+        }
+
         #region Login Tests - Cas Nominaux
 
         // Note: Login with valid credentials returns 500 in test environment because
@@ -158,7 +173,7 @@ namespace IntegrationTests.Web
 
         #endregion
 
-        #region Logout Tests - Cas Nominaux
+        #region Logout Tests
 
         [Fact]
         public async Task Logout_WithoutAccessToken_ShouldReturnBadRequest()
@@ -188,13 +203,47 @@ namespace IntegrationTests.Web
         #region Refresh Tests
 
         [Fact]
-        public async Task Refresh_ShouldReturnOk()
+        public async Task Refresh_WithoutCookie_ShouldReturnUnauthorized()
         {
+            // Act - no refresh-token cookie set
+            var response = await _client.PutAsync("/api/Auth/Refresh", null);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Refresh_WithInvalidRefreshToken_ShouldReturnUnauthorized()
+        {
+            // Arrange
+            _client.DefaultRequestHeaders.Add("Cookie", "refresh-token=non-existent-token");
+
             // Act
             var response = await _client.PutAsync("/api/Auth/Refresh", null);
 
             // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Refresh_WithRevokedToken_ShouldReturnUnauthorized()
+        {
+            // Arrange
+            var user = CreateAuthUserEntity();
+            _context.AuthUsers.Add(user);
+            await _context.SaveChangesAsync();
+
+            var refreshTokenValue = "revoked-refresh-token";
+            _context.Tokens.Add(CreateTokenEntity(user.Id, isRevoked: true, refreshToken: refreshTokenValue));
+            await _context.SaveChangesAsync();
+
+            _client.DefaultRequestHeaders.Add("Cookie", $"refresh-token={refreshTokenValue}");
+
+            // Act
+            var response = await _client.PutAsync("/api/Auth/Refresh", null);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
 
         #endregion
@@ -320,33 +369,10 @@ namespace IntegrationTests.Web
             _context.AuthUsers.Add(user);
             await _context.SaveChangesAsync();
 
-            // Create multiple token entries for this user (simulating multiple devices)
-            var token1 = new TokenEntity
-            {
-                AccessToken = "access1",
-                RefreshToken = "refresh1",
-                IsRevoked = false,
-                AccessExpiresAt = DateTime.UtcNow.AddMinutes(30),
-                RefreshExpiresAt = DateTime.UtcNow.AddDays(30),
-                DeviceName = "Chrome",
-                IpAddress = "127.0.0.1",
-                UserId = user.Id,
-                Created = DateTime.UtcNow
-            };
-            var token2 = new TokenEntity
-            {
-                AccessToken = "access2",
-                RefreshToken = "refresh2",
-                IsRevoked = false,
-                AccessExpiresAt = DateTime.UtcNow.AddMinutes(30),
-                RefreshExpiresAt = DateTime.UtcNow.AddDays(30),
-                DeviceName = "Firefox",
-                IpAddress = "192.168.1.1",
-                UserId = user.Id,
-                Created = DateTime.UtcNow
-            };
-
-            _context.Tokens.AddRange(token1, token2);
+            _context.Tokens.AddRange(
+                CreateTokenEntity(user.Id, "Chrome"),
+                CreateTokenEntity(user.Id, "Firefox")
+            );
             await _context.SaveChangesAsync();
 
             var tokenString = GenerateValidJwt(userId: user.Id);
@@ -358,7 +384,7 @@ namespace IntegrationTests.Web
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-            // Verify all tokens are revoked
+            _context.ChangeTracker.Clear();
             var tokens = _context.Tokens.Where(t => t.UserId == user.Id).ToList();
             Assert.All(tokens, t => Assert.True(t.IsRevoked));
         }
@@ -372,32 +398,10 @@ namespace IntegrationTests.Web
             _context.AuthUsers.AddRange(user1, user2);
             await _context.SaveChangesAsync();
 
-            var tokenUser1 = new TokenEntity
-            {
-                AccessToken = "access-user1",
-                RefreshToken = "refresh-user1",
-                IsRevoked = false,
-                AccessExpiresAt = DateTime.UtcNow.AddMinutes(30),
-                RefreshExpiresAt = DateTime.UtcNow.AddDays(30),
-                DeviceName = "Chrome",
-                IpAddress = "127.0.0.1",
-                UserId = user1.Id,
-                Created = DateTime.UtcNow
-            };
-            var tokenUser2 = new TokenEntity
-            {
-                AccessToken = "access-user2",
-                RefreshToken = "refresh-user2",
-                IsRevoked = false,
-                AccessExpiresAt = DateTime.UtcNow.AddMinutes(30),
-                RefreshExpiresAt = DateTime.UtcNow.AddDays(30),
-                DeviceName = "Chrome",
-                IpAddress = "127.0.0.1",
-                UserId = user2.Id,
-                Created = DateTime.UtcNow
-            };
-
-            _context.Tokens.AddRange(tokenUser1, tokenUser2);
+            _context.Tokens.AddRange(
+                CreateTokenEntity(user1.Id, "Chrome"),
+                CreateTokenEntity(user2.Id, "Chrome")
+            );
             await _context.SaveChangesAsync();
 
             var tokenString = GenerateValidJwt(userId: user1.Id);
@@ -409,11 +413,10 @@ namespace IntegrationTests.Web
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-            // User1 tokens should be revoked
+            _context.ChangeTracker.Clear();
             var user1Tokens = _context.Tokens.Where(t => t.UserId == user1.Id).ToList();
             Assert.All(user1Tokens, t => Assert.True(t.IsRevoked));
 
-            // User2 tokens should NOT be revoked
             var user2Tokens = _context.Tokens.Where(t => t.UserId == user2.Id).ToList();
             Assert.All(user2Tokens, t => Assert.False(t.IsRevoked));
         }
@@ -435,7 +438,6 @@ namespace IntegrationTests.Web
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-            // Verify Set-Cookie headers indicate cookie deletion (expires in the past)
             var setCookieHeaders = response.Headers.GetValues("Set-Cookie").ToList();
             Assert.Contains(setCookieHeaders, c => c.Contains("access-token") && c.Contains("expires=Thu, 01 Jan 1970"));
             Assert.Contains(setCookieHeaders, c => c.Contains("refresh-token") && c.Contains("expires=Thu, 01 Jan 1970"));

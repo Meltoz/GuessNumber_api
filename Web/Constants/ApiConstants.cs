@@ -6,5 +6,8 @@
 
         public const string AccessTokenCookieName = "access-token";
         public const string RefreshTokenCookieName = "refresh-token";
+
+        public const string AdminPolicy = "AdminOnly";
+        public const string AuthenticatedUserPolicy = "Authenticated";
     }
 }

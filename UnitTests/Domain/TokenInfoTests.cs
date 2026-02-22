@@ -14,18 +14,16 @@ namespace UnitTests.Domain
         {
             // Arrange
             var user = CreateValidUser();
-            var access = Token.Create("valid-access-token");
             var refresh = Token.Create("valid-refresh-token");
             var accessExpires = DateTime.UtcNow.AddMinutes(30);
             var refreshExpires = DateTime.UtcNow.AddDays(30);
             var ip = IPAddress.Parse("192.168.1.1");
 
             // Act
-            var tokenInfo = new TokenInfo(access, refresh, refreshExpires, accessExpires, user, "Chrome", ip);
+            var tokenInfo = new TokenInfo(refresh, refreshExpires, accessExpires, user, "Chrome", ip);
 
             // Assert
             Assert.Equal(Guid.Empty, tokenInfo.Id);
-            Assert.Equal(access, tokenInfo.AccessToken);
             Assert.Equal(refresh, tokenInfo.RefreshToken);
             Assert.Equal(accessExpires, tokenInfo.AccessExpiresAt);
             Assert.Equal(refreshExpires, tokenInfo.RefreshExpiresAt);
@@ -41,18 +39,16 @@ namespace UnitTests.Domain
             // Arrange
             var id = Guid.NewGuid();
             var user = CreateValidUser();
-            var access = Token.Create("valid-access-token");
             var refresh = Token.Create("valid-refresh-token");
             var accessExpires = DateTime.UtcNow.AddMinutes(30);
             var refreshExpires = DateTime.UtcNow.AddDays(30);
             var ip = IPAddress.Parse("192.168.1.1");
 
             // Act
-            var tokenInfo = new TokenInfo(id, access, refresh, refreshExpires, accessExpires, user, "Chrome", ip);
+            var tokenInfo = new TokenInfo(id, refresh, refreshExpires, accessExpires, user, "Chrome", ip);
 
             // Assert
             Assert.Equal(id, tokenInfo.Id);
-            Assert.Equal(access, tokenInfo.AccessToken);
             Assert.Equal(refresh, tokenInfo.RefreshToken);
             Assert.Equal(user, tokenInfo.User);
             Assert.False(tokenInfo.IsRevoked);
@@ -64,14 +60,13 @@ namespace UnitTests.Domain
             // Arrange
             var id = Guid.Empty;
             var user = CreateValidUser();
-            var access = Token.Create("valid-access-token");
             var refresh = Token.Create("valid-refresh-token");
             var accessExpires = DateTime.UtcNow.AddMinutes(30);
             var refreshExpires = DateTime.UtcNow.AddDays(30);
             var ip = IPAddress.Parse("192.168.1.1");
 
             // Act
-            var tokenInfo = new TokenInfo(id, access, refresh, refreshExpires, accessExpires, user, "Chrome", ip);
+            var tokenInfo = new TokenInfo(id, refresh, refreshExpires, accessExpires, user, "Chrome", ip);
 
             // Assert
             Assert.Equal(Guid.Empty, tokenInfo.Id);
@@ -91,12 +86,10 @@ namespace UnitTests.Domain
             var ip = IPAddress.Parse("10.0.0.1");
 
             // Act
-            var tokenInfo = new TokenInfo("valid-access-token", "valid-refresh-token", refreshExpires, accessExpires, user, "Firefox", ip);
+            var tokenInfo = new TokenInfo("valid-refresh-token", refreshExpires, accessExpires, user, "Firefox", ip);
 
             // Assert
             Assert.Equal(Guid.Empty, tokenInfo.Id);
-            Assert.NotNull(tokenInfo.AccessToken);
-            Assert.Equal("valid-access-token", tokenInfo.AccessToken.Value);
             Assert.NotNull(tokenInfo.RefreshToken);
             Assert.Equal("valid-refresh-token", tokenInfo.RefreshToken.Value);
             Assert.Equal(accessExpires, tokenInfo.AccessExpiresAt);
@@ -118,11 +111,10 @@ namespace UnitTests.Domain
             var ip = IPAddress.Parse("172.16.0.1");
 
             // Act
-            var tokenInfo = new TokenInfo(id, "valid-access-token", "valid-refresh-token", refreshExpires, accessExpires, user, "Safari", ip);
+            var tokenInfo = new TokenInfo(id, "valid-refresh-token", refreshExpires, accessExpires, user, "Safari", ip);
 
             // Assert
             Assert.Equal(id, tokenInfo.Id);
-            Assert.NotNull(tokenInfo.AccessToken);
             Assert.NotNull(tokenInfo.RefreshToken);
             Assert.Equal(user, tokenInfo.User);
             Assert.False(tokenInfo.IsRevoked);
@@ -139,7 +131,7 @@ namespace UnitTests.Domain
             var ip = IPAddress.Parse("192.168.1.1");
 
             // Act
-            var tokenInfo = new TokenInfo(id, "valid-access-token", "valid-refresh-token", refreshExpires, accessExpires, user, "Chrome", ip);
+            var tokenInfo = new TokenInfo(id, "valid-refresh-token", refreshExpires, accessExpires, user, "Chrome", ip);
 
             // Assert
             Assert.Equal(Guid.Empty, tokenInfo.Id);
@@ -153,7 +145,6 @@ namespace UnitTests.Domain
         public void Constructor_WithNullUser_ShouldThrowArgumentNullException()
         {
             // Arrange
-            var access = Token.Create("valid-access-token");
             var refresh = Token.Create("valid-refresh-token");
             var accessExpires = DateTime.UtcNow.AddMinutes(30);
             var refreshExpires = DateTime.UtcNow.AddDays(30);
@@ -161,7 +152,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                new TokenInfo(access, refresh, refreshExpires, accessExpires, null, "Chrome", ip));
+                new TokenInfo(refresh, refreshExpires, accessExpires, null, "Chrome", ip));
         }
 
         [Fact]
@@ -174,40 +165,12 @@ namespace UnitTests.Domain
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                new TokenInfo("valid-access-token", "valid-refresh-token", refreshExpires, accessExpires, null, "Chrome", ip));
+                new TokenInfo("valid-refresh-token", refreshExpires, accessExpires, null, "Chrome", ip));
         }
 
         #endregion
 
-        #region Constructor Tests - Cas Limites et Erreurs (Token strings)
-
-        [Fact]
-        public void Constructor_String_WithNullAccessToken_ShouldThrowArgumentException()
-        {
-            // Arrange
-            var user = CreateValidUser();
-            var accessExpires = DateTime.UtcNow.AddMinutes(30);
-            var refreshExpires = DateTime.UtcNow.AddDays(30);
-            var ip = IPAddress.Parse("192.168.1.1");
-
-            // Act & Assert
-            Assert.Throws<ArgumentException>(() =>
-                new TokenInfo(null, "valid-refresh-token", refreshExpires, accessExpires, user, "Chrome", ip));
-        }
-
-        [Fact]
-        public void Constructor_String_WithEmptyAccessToken_ShouldThrowArgumentException()
-        {
-            // Arrange
-            var user = CreateValidUser();
-            var accessExpires = DateTime.UtcNow.AddMinutes(30);
-            var refreshExpires = DateTime.UtcNow.AddDays(30);
-            var ip = IPAddress.Parse("192.168.1.1");
-
-            // Act & Assert
-            Assert.Throws<ArgumentException>(() =>
-                new TokenInfo("", "valid-refresh-token", refreshExpires, accessExpires, user, "Chrome", ip));
-        }
+        #region Constructor Tests - Cas Limites et Erreurs (RefreshToken string)
 
         [Fact]
         public void Constructor_String_WithNullRefreshToken_ShouldThrowArgumentException()
@@ -220,7 +183,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             Assert.Throws<ArgumentException>(() =>
-                new TokenInfo("valid-access-token", null, refreshExpires, accessExpires, user, "Chrome", ip));
+                new TokenInfo((string)null, refreshExpires, accessExpires, user, "Chrome", ip));
         }
 
         [Fact]
@@ -234,7 +197,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             Assert.Throws<ArgumentException>(() =>
-                new TokenInfo("", "valid-refresh-token", refreshExpires, accessExpires, user, "Chrome", ip));
+                new TokenInfo("", refreshExpires, accessExpires, user, "Chrome", ip));
         }
 
         #endregion
@@ -246,7 +209,6 @@ namespace UnitTests.Domain
         {
             // Arrange
             var user = CreateValidUser();
-            var access = Token.Create("valid-access-token");
             var refresh = Token.Create("valid-refresh-token");
             var accessExpires = DateTime.UtcNow.AddMinutes(30);
             var refreshExpires = DateTime.UtcNow.AddDays(30);
@@ -254,7 +216,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                new TokenInfo(access, refresh, refreshExpires, accessExpires, user, null, ip));
+                new TokenInfo(refresh, refreshExpires, accessExpires, user, null, ip));
         }
 
         [Fact]
@@ -262,7 +224,6 @@ namespace UnitTests.Domain
         {
             // Arrange
             var user = CreateValidUser();
-            var access = Token.Create("valid-access-token");
             var refresh = Token.Create("valid-refresh-token");
             var accessExpires = DateTime.UtcNow.AddMinutes(30);
             var refreshExpires = DateTime.UtcNow.AddDays(30);
@@ -270,7 +231,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                new TokenInfo(access, refresh, refreshExpires, accessExpires, user, "", ip));
+                new TokenInfo(refresh, refreshExpires, accessExpires, user, "", ip));
         }
 
         [Fact]
@@ -278,7 +239,6 @@ namespace UnitTests.Domain
         {
             // Arrange
             var user = CreateValidUser();
-            var access = Token.Create("valid-access-token");
             var refresh = Token.Create("valid-refresh-token");
             var accessExpires = DateTime.UtcNow.AddMinutes(30);
             var refreshExpires = DateTime.UtcNow.AddDays(30);
@@ -286,7 +246,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                new TokenInfo(access, refresh, refreshExpires, accessExpires, user, "   ", ip));
+                new TokenInfo(refresh, refreshExpires, accessExpires, user, "   ", ip));
         }
 
         #endregion
@@ -298,14 +258,13 @@ namespace UnitTests.Domain
         {
             // Arrange
             var user = CreateValidUser();
-            var access = Token.Create("valid-access-token");
             var refresh = Token.Create("valid-refresh-token");
             var accessExpires = DateTime.UtcNow.AddMinutes(30);
             var refreshExpires = DateTime.UtcNow.AddDays(30);
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                new TokenInfo(access, refresh, refreshExpires, accessExpires, user, "Chrome", (IPAddress)null));
+                new TokenInfo(refresh, refreshExpires, accessExpires, user, "Chrome", (IPAddress)null));
         }
 
         [Theory]
@@ -322,14 +281,13 @@ namespace UnitTests.Domain
         {
             // Arrange
             var user = CreateValidUser();
-            var access = Token.Create("valid-access-token");
             var refresh = Token.Create("valid-refresh-token");
             var accessExpires = DateTime.UtcNow.AddMinutes(30);
             var refreshExpires = DateTime.UtcNow.AddDays(30);
             var ip = IPAddress.Parse(validIp);
 
             // Act
-            var tokenInfo = new TokenInfo(access, refresh, refreshExpires, accessExpires, user, "Chrome", ip);
+            var tokenInfo = new TokenInfo(refresh, refreshExpires, accessExpires, user, "Chrome", ip);
 
             // Assert
             Assert.Equal(ip, tokenInfo.IpAdress);
@@ -344,7 +302,6 @@ namespace UnitTests.Domain
         {
             // Arrange
             var user = CreateValidUser();
-            var access = Token.Create("valid-access-token");
             var refresh = Token.Create("valid-refresh-token");
             var accessExpires = DateTime.UtcNow.AddMinutes(-10);
             var refreshExpires = DateTime.UtcNow.AddDays(30);
@@ -352,7 +309,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             Assert.Throws<InvalidDataException>(() =>
-                new TokenInfo(access, refresh, refreshExpires, accessExpires, user, "Chrome", ip));
+                new TokenInfo(refresh, refreshExpires, accessExpires, user, "Chrome", ip));
         }
 
         [Fact]
@@ -360,7 +317,6 @@ namespace UnitTests.Domain
         {
             // Arrange
             var user = CreateValidUser();
-            var access = Token.Create("valid-access-token");
             var refresh = Token.Create("valid-refresh-token");
             var accessExpires = DateTime.UtcNow.AddMinutes(30);
             var refreshExpires = DateTime.UtcNow.AddDays(-1);
@@ -368,7 +324,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             Assert.Throws<InvalidDataException>(() =>
-                new TokenInfo(access, refresh, refreshExpires, accessExpires, user, "Chrome", ip));
+                new TokenInfo(refresh, refreshExpires, accessExpires, user, "Chrome", ip));
         }
 
         [Fact]
@@ -376,7 +332,6 @@ namespace UnitTests.Domain
         {
             // Arrange
             var user = CreateValidUser();
-            var access = Token.Create("valid-access-token");
             var refresh = Token.Create("valid-refresh-token");
             var accessExpires = DateTime.UtcNow.AddDays(60);
             var refreshExpires = DateTime.UtcNow.AddDays(30);
@@ -384,7 +339,7 @@ namespace UnitTests.Domain
 
             // Act & Assert
             Assert.Throws<InvalidDataException>(() =>
-                new TokenInfo(access, refresh, refreshExpires, accessExpires, user, "Chrome", ip));
+                new TokenInfo(refresh, refreshExpires, accessExpires, user, "Chrome", ip));
         }
 
         #endregion
@@ -439,13 +394,12 @@ namespace UnitTests.Domain
         {
             // Arrange
             var user = CreateValidUser();
-            var access = Token.Create("valid-access-token");
             var refresh = Token.Create("valid-refresh-token");
             var accessExpires = DateTime.UtcNow.AddSeconds(1);
             var refreshExpires = DateTime.UtcNow.AddDays(30);
             var ip = IPAddress.Parse("192.168.1.1");
 
-            var tokenInfo = new TokenInfo(access, refresh, refreshExpires, accessExpires, user, "Chrome", ip);
+            var tokenInfo = new TokenInfo(refresh, refreshExpires, accessExpires, user, "Chrome", ip);
 
             // Wait for access to expire
             Thread.Sleep(1500);
@@ -479,13 +433,12 @@ namespace UnitTests.Domain
         {
             // Arrange
             var user = CreateValidUser();
-            var access = Token.Create("valid-access-token");
             var refresh = Token.Create("valid-refresh-token");
             var accessExpires = DateTime.UtcNow.AddSeconds(1);
             var refreshExpires = DateTime.UtcNow.AddSeconds(1);
             var ip = IPAddress.Parse("192.168.1.1");
 
-            var tokenInfo = new TokenInfo(access, refresh, refreshExpires, accessExpires, user, "Chrome", ip);
+            var tokenInfo = new TokenInfo(refresh, refreshExpires, accessExpires, user, "Chrome", ip);
 
             // Wait for refresh to expire
             Thread.Sleep(1500);
@@ -509,13 +462,12 @@ namespace UnitTests.Domain
         private TokenInfo CreateValidTokenInfo()
         {
             var user = CreateValidUser();
-            var access = Token.Create("valid-access-token");
             var refresh = Token.Create("valid-refresh-token");
             var accessExpires = DateTime.UtcNow.AddMinutes(30);
             var refreshExpires = DateTime.UtcNow.AddDays(30);
             var ip = IPAddress.Parse("192.168.1.1");
 
-            return new TokenInfo(access, refresh, refreshExpires, accessExpires, user, "Chrome", ip);
+            return new TokenInfo(refresh, refreshExpires, accessExpires, user, "Chrome", ip);
         }
 
         #endregion

@@ -1,10 +1,18 @@
-﻿using Infrastructure;
+﻿using Domain.Enums;
+using Infrastructure;
 using Infrastructure.Entities;
 using Meltix.IntegrationTests;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Shared.Configuration;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using Web.Constants;
 using Web.ViewModels.Admin;
 
 namespace IntegrationTests.Web
@@ -20,8 +28,140 @@ namespace IntegrationTests.Web
             _context = DbContextProvider.SetupContext();
             _factory = new CustomWebApplicationFactory(_context);
             _client = _factory.CreateClient();
-
+            SetupAdminAuth();
         }
+
+        private void SetupAdminAuth()
+        {
+            var adminUser = new AuthUserEntity
+            {
+                Pseudo = "AdminUser",
+                Avatar = "avatar.png",
+                Email = "admin@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.Admin,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(adminUser);
+            _context.SaveChanges();
+
+            var tokenId = Guid.NewGuid();
+            _context.Tokens.Add(new TokenEntity
+            {
+                Id = tokenId,
+                RefreshToken = "admin-refresh-token",
+                IsRevoked = false,
+                AccessExpiresAt = DateTime.UtcNow.AddMinutes(30),
+                RefreshExpiresAt = DateTime.UtcNow.AddDays(30),
+                DeviceName = "TestBrowser",
+                IpAddress = "127.0.0.1",
+                UserId = adminUser.Id,
+                Created = DateTime.UtcNow
+            });
+            _context.SaveChanges();
+
+            var jwt = GenerateJwt(adminUser.Id, tokenId, RoleUser.Admin);
+            _client.DefaultRequestHeaders.Add("Cookie", $"{ApiConstants.AccessTokenCookieName}={jwt}");
+        }
+
+        private string GenerateJwt(Guid userId, Guid tokenId, RoleUser role)
+        {
+            var authConfig = _factory.Services.GetRequiredService<IOptions<AuthConfiguration>>().Value;
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authConfig.Key));
+            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+                new Claim(ClaimTypes.Role, role.ToString()),
+                new Claim(ClaimTypes.Name, "AdminUser"),
+                new Claim(JwtRegisteredClaimNames.Jti, tokenId.ToString()),
+            };
+
+            var token = new JwtSecurityToken(
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(30),
+                signingCredentials: cred
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        #region Authorization Tests
+
+        [Fact]
+        public async Task Search_WithoutAuth_ShouldReturnUnauthorized()
+        {
+            // Arrange - client sans cookie
+            var unauthClient = _factory.CreateClient();
+
+            // Act
+            var response = await unauthClient.GetAsync("/api/AdminCategory/search?pageIndex=0&pageSize=10&sort=name_ascending&search=");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Add_WithoutAuth_ShouldReturnUnauthorized()
+        {
+            // Arrange
+            var unauthClient = _factory.CreateClient();
+            var content = new StringContent(
+                JsonSerializer.Serialize(new CategoryAdminVM { Name = "Electronics" }),
+                Encoding.UTF8, "application/json");
+
+            // Act
+            var response = await unauthClient.PostAsync("/api/AdminCategory/Add", content);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Search_WithUserRole_ShouldReturnForbidden()
+        {
+            // Arrange - client avec un token User (non Admin)
+            var userClient = _factory.CreateClient();
+
+            var user = new AuthUserEntity
+            {
+                Pseudo = "RegularUser",
+                Avatar = "avatar.png",
+                Email = "user@example.com",
+                Password = "hashedpassword",
+                Role = RoleUser.User,
+                Created = DateTime.UtcNow
+            };
+            _context.AuthUsers.Add(user);
+            _context.SaveChanges();
+
+            var tokenId = Guid.NewGuid();
+            _context.Tokens.Add(new TokenEntity
+            {
+                Id = tokenId,
+                RefreshToken = "user-refresh-token",
+                IsRevoked = false,
+                AccessExpiresAt = DateTime.UtcNow.AddMinutes(30),
+                RefreshExpiresAt = DateTime.UtcNow.AddDays(30),
+                DeviceName = "TestBrowser",
+                IpAddress = "127.0.0.1",
+                UserId = user.Id,
+                Created = DateTime.UtcNow
+            });
+            _context.SaveChanges();
+
+            var jwt = GenerateJwt(user.Id, tokenId, RoleUser.User);
+            userClient.DefaultRequestHeaders.Add("Cookie", $"{ApiConstants.AccessTokenCookieName}={jwt}");
+
+            // Act
+            var response = await userClient.GetAsync("/api/AdminCategory/search?pageIndex=0&pageSize=10&sort=name_ascending&search=");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        }
+
+        #endregion
 
         #region Search Tests
 

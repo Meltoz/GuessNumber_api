@@ -1,7 +1,12 @@
 using Application;
+using Application.Interfaces.Repository;
 using Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Shared.Configuration;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
 using Web.Constants;
 using Web.Mappings;
 using Web.Middlewares;
@@ -18,6 +23,10 @@ namespace Web
             services.Configure<DatabaseConfiguration>(builder.Configuration.GetSection("ConnectionStrings"));
             services.Configure<AuthConfiguration>(builder.Configuration.GetSection("Auth"));
             services.Configure<EncryptionConfiguration>(builder.Configuration.GetSection("Encryption"));
+
+            var authConfiguration = builder.Configuration
+                .GetSection("Auth")
+                .Get<AuthConfiguration>() ?? throw new Exception("No configuration for auth");
 
             if (env != "Testing")
             {
@@ -59,6 +68,52 @@ namespace Web
             services.AddInfrastructure(builder.Configuration, env);
             services.AddAutoMapper(cfg => { }, typeof(ViewModelToDomainProfile), typeof(DomainToViewModelProfile));
 
+            // Authentification
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(opt =>
+                {
+                    opt.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authConfiguration.Key)),
+                        ValidateIssuer = false,
+                        ValidateAudience = false,
+                        ValidateLifetime = true
+                    };
+
+                    opt.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = ctx =>
+                        {
+                            ctx.Token = ctx.Request.Cookies[ApiConstants.AccessTokenCookieName];
+                            return Task.CompletedTask;
+                        },
+                        OnTokenValidated = async ctx =>
+                        {
+                            var jtiClaim = ctx.Principal?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                            if(!Guid.TryParse(jtiClaim, out var tokenId))
+                            {
+                                ctx.Fail("Invalid Token");
+                                return;
+                            }
+                            var tokenRepo = ctx.HttpContext.RequestServices
+                                .GetService<ITokenRepository>();
+                            var token = await tokenRepo.GetByIdAsync(tokenId);
+
+                            if (token is null || token.IsRevoked)
+                                ctx.Fail("Token has been revoked");
+                        }
+                    };
+                });
+
+            services.AddAuthorization(opt =>
+            {
+                opt.AddPolicy(ApiConstants.AdminPolicy, 
+                    policy => policy.RequireRole("Admin"));
+
+                opt.AddPolicy(ApiConstants.AuthenticatedUserPolicy, 
+                    policy => policy.RequireAuthenticatedUser());
+            });
 
             var app = builder.Build();
 
@@ -85,6 +140,7 @@ namespace Web
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
