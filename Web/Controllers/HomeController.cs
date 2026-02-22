@@ -45,8 +45,8 @@ namespace Web.Controllers
             var actualities = await _actualityService.GetActiveActualities();
 
 
-            if(!actualities.Any())
-                return NotFound();
+            if (!actualities.Any())
+                return Ok();
 
             return Ok(_mapper.Map<IEnumerable<ActualityVM>>(actualities));
         }

@@ -15,7 +15,7 @@ namespace Application.Services
         private readonly ITokenRepository _tokenRepository = tr;
 
         private readonly static int daysRefreshExpire = 30;
-        private readonly static int accessExpires = 30;
+        private readonly static int accessExpires = 5;
 
         public async Task<Tuple<string, TokenInfo>> CreateTokenAsync(AuthUser user, IList<Claim> claims, string device, IPAddress ipAddress)
         {
