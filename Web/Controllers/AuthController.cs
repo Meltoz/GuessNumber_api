@@ -2,6 +2,7 @@
 using Application.Services;
 using AutoMapper;
 using Domain.User;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -13,6 +14,7 @@ using System.Security.Claims;
 using System.Text;
 using Web.Constants;
 using Web.Extensions;
+using Web.ViewModels;
 
 namespace Web.Controllers
 {
@@ -50,8 +52,6 @@ namespace Web.Controllers
                 return Unauthorized();
             }
 
-         
-
             var userAgent = Request.Headers.UserAgent;
             var ipAddress = HttpContext.Connection.RemoteIpAddress;
 
@@ -65,7 +65,7 @@ namespace Web.Controllers
             };
 
             var token = await _tokenService.CreateTokenAsync(userFinded, claims, userAgent.ToString(), ipAddress);
-            Response.AppendCookie(ApiConstants.AccessTokenCookieName, token.Item1.ToString(), TimeSpan.FromMinutes(30), httpOnly: false);
+            Response.AppendCookie(ApiConstants.AccessTokenCookieName, token.Item1.ToString(), TimeSpan.FromMinutes(5), httpOnly: false);
             Response.AppendCookie(ApiConstants.RefreshTokenCookieName, token.Item2.RefreshToken.ToString(), TimeSpan.FromDays(30));
             
             return Ok();
@@ -95,7 +95,7 @@ namespace Web.Controllers
             }
 
             if (token.IsRevoked ||
-                token.IsRefreshExpires() || token.IsAccessExpires() ||
+                token.IsRefreshExpires() ||
                 token.RefreshToken != refreshToken )   
             {
                 try
@@ -127,7 +127,7 @@ namespace Web.Controllers
 
             var newToken = await _tokenService.CreateTokenAsync(token.User, claims, userAgent.ToString(), ipAddress);
 
-            Response.AppendCookie(ApiConstants.AccessTokenCookieName, newToken.Item1.ToString(), TimeSpan.FromMinutes(30), httpOnly: false);
+            Response.AppendCookie(ApiConstants.AccessTokenCookieName, newToken.Item1.ToString(), TimeSpan.FromMinutes(5), httpOnly: false);
             Response.AppendCookie(ApiConstants.RefreshTokenCookieName, newToken.Item2.RefreshToken.ToString(), TimeSpan.FromDays(30));
             return Ok();
         }
@@ -206,6 +206,22 @@ namespace Web.Controllers
             return Ok();
         }
 
+
+        [HttpGet]
+        [Authorize(Policy =ApiConstants.AuthenticatedUserPolicy)]
+        public async Task<IActionResult> Me()
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var user =await _userService.GetDetail(userId) as AuthUser;
+
+            if(user is null)
+            {
+                return BadRequest("Utilisateur non trouvé");
+            }
+
+            return Ok(_mapper.Map<AuthUserDetailVM>(user));
+        }
         #region Private Methods
 
         private ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
