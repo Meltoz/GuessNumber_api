@@ -1,16 +1,19 @@
 ﻿using Application.Services;
 using AutoMapper;
 using Domain.Party;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shared;
 using Shared.Enums.Sorting;
 using System.Text.RegularExpressions;
+using Web.Constants;
 using Web.Extensions;
 using Web.ViewModels.Admin;
 
 namespace Web.Controllers.Admins
 {
     [Route("api/[controller]/[action]")]
+    [Authorize(Policy =ApiConstants.AdminPolicy)]
     [ApiController]
     public class AdminCategoryController(CategoryService cs, IMapper m) : ControllerBase
     {

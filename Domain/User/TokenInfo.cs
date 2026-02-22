@@ -7,8 +7,6 @@ namespace Domain.User
     {
         public Guid Id { get; private set; }
 
-        public Token AccessToken { get; private set; }
-
         public Token RefreshToken { get; private set; }
 
         public DateTime RefreshExpiresAt { get; private set; }
@@ -28,9 +26,8 @@ namespace Domain.User
 
         }
 
-        public TokenInfo(Token access, Token refresh, DateTime refreshExpires, DateTime accessExpires, AuthUser user, string deviceName, IPAddress ipAddress)
+        public TokenInfo( Token refresh, DateTime refreshExpires, DateTime accessExpires, AuthUser user, string deviceName, IPAddress ipAddress)
         {
-            AccessToken = access;
             RefreshToken = refresh;
             IsRevoked = false;
 
@@ -45,15 +42,14 @@ namespace Domain.User
         }
 
         public TokenInfo(Guid id, Token access, Token refresh, DateTime refreshExpires, DateTime accessExpires, AuthUser user, string deviceName, IPAddress ipAddress) :
-            this(access, refresh, refreshExpires, accessExpires, user, deviceName, ipAddress)
+            this(refresh, refreshExpires, accessExpires, user, deviceName, ipAddress)
         {
             if (id != Guid.Empty)
                 Id = id;
         }
 
-        public TokenInfo(string access, string refresh, DateTime refreshExpires, DateTime accessExpires, AuthUser user, string deviceName, IPAddress ipAddress)
+        public TokenInfo(string refresh, DateTime refreshExpires, DateTime accessExpires, AuthUser user, string deviceName, IPAddress ipAddress)
         {
-            AccessToken = Token.Create(access);
             RefreshToken = Token.Create(refresh);
             IsRevoked = false;
 
@@ -67,8 +63,8 @@ namespace Domain.User
             ValidDate(accessExpires, refreshExpires);
         }
 
-        public TokenInfo(Guid id, string access, string refresh, DateTime refreshExpires, DateTime accessExpires, AuthUser user, string deviceName, IPAddress ipAddress) :
-            this(access, refresh, refreshExpires, accessExpires, user, deviceName, ipAddress)
+        public TokenInfo(Guid id, string refresh, DateTime refreshExpires, DateTime accessExpires, AuthUser user, string deviceName, IPAddress ipAddress) :
+            this( refresh, refreshExpires, accessExpires, user, deviceName, ipAddress)
         {
             if (id != Guid.Empty)
                 Id = id;
@@ -95,6 +91,7 @@ namespace Domain.User
 
             return AccessExpiresAt < today;
         }
+
 
         #region Private methods
         private void ValidDate(DateTime accessExpires, DateTime refreshExpires)

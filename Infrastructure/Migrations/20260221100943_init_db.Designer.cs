@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(GuessNumberContext))]
-    [Migration("20260215133721_init_db")]
+    [Migration("20260221100943_init_db")]
     partial class init_db
     {
         /// <inheritdoc />
@@ -219,10 +219,6 @@ namespace Infrastructure.Migrations
 
                     b.Property<DateTime>("AccessExpiresAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("AccessToken")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<DateTime>("Created")
                         .HasColumnType("timestamp with time zone");

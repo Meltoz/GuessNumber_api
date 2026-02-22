@@ -102,9 +102,6 @@ namespace Infrastructure
 
                 modelBuilder.Entity<TokenEntity>(entity =>
                 {
-                    entity.Property(t => t.AccessToken)
-                    .HasConversion(tokenConverter);
-
                     entity.Property(t => t.RefreshToken)
                     .HasConversion(tokenConverter);
                 });
