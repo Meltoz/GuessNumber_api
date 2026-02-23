@@ -17,6 +17,7 @@ namespace Application
             services.AddScoped<AesEncryptionService>();
             services.AddScoped<JwtService>();
             services.AddScoped<TokenService>();
+            services.AddScoped<GameService>();
 
 
             return services;
