@@ -36,6 +36,7 @@ namespace Infrastructure
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IAuthUserRepository, AuthUserRepository>();
             services.AddScoped<ITokenRepository, TokenRepository>();
+            services.AddScoped<IGameRepository, GameRepository>();
 
             services.AddAutoMapper(cfg => { cfg.ShouldUseConstructor = ci => ci.IsPrivate; }, typeof(DomainToEntityProfile), typeof(EntityToDomainProfile));
             return services;

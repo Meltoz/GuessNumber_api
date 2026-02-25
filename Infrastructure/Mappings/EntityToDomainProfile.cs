@@ -39,6 +39,8 @@ namespace Infrastructure.Mappings
 
             CreateMap<TokenEntity, TokenInfo>()
                 .ForMember(dest => dest.IpAdress, opt => opt.MapFrom(src => IPAddress.Parse(src.IpAddress)));
+
+            CreateMap<GameEntity, Game>();
         }
     }
 }

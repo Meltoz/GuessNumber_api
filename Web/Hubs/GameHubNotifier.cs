@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces.Web;
 using Microsoft.AspNetCore.SignalR;
+using Web.Hubs.Interfaces;
 
 namespace Web.Hubs
 {
