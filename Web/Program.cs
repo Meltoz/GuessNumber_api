@@ -1,5 +1,6 @@
 using Application;
 using Application.Interfaces.Repository;
+using Application.Interfaces.Web;
 using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,7 @@ using Shared.Configuration;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Web.Constants;
+using Web.Hubs;
 using Web.Mappings;
 using Web.Middlewares;
 
@@ -67,6 +69,9 @@ namespace Web
             services.AddApplication();
             services.AddInfrastructure(builder.Configuration, env);
             services.AddAutoMapper(cfg => { }, typeof(ViewModelToDomainProfile), typeof(DomainToViewModelProfile));
+            services.AddSignalR();
+            services.AddScoped<IGameHubNotifier, GameHubNotifier>();
+
 
             // Authentification
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -133,17 +138,15 @@ namespace Web
                 dbContext.Database.Migrate();
             }
 
-            app.UseCors("front");
 
             // Middlewares
             app.UseMiddleware<ExceptionHandlingMiddleware>();
-
             app.UseHttpsRedirection();
-
+            app.UseCors("front");
             app.UseAuthentication();
             app.UseAuthorization();
-
             app.MapControllers();
+            app.MapHub<GameHub>("/hubs/game");
 
             app.Run();
         }
