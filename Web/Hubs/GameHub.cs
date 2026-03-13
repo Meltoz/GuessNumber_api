@@ -9,20 +9,28 @@ using Web.ViewModels;
 
 namespace Web.Hubs
 {
-    public class GameHub(GameService gm, UserService us, IMapper m) : Hub<IGameHubClient>
+    public class GameHub : Hub<IGameHubClient>
     {
-        private readonly GameService _gameService = gm;
-        private readonly UserService _userService = us;
-        private readonly IMapper _mapper = m;
+        private readonly GameService _gameService;
+        private readonly UserService _userService;
+        private readonly IMapper _mapper;
+
+        public GameHub (GameService gm, UserService us, IMapper m)
+        {
+            _gameService = gm;
+            _userService = us;
+            _mapper = m;
+        }
 
         [Authorize(Policy =ApiConstants.AuthenticatedUserPolicy)]
         public async Task CreatePartyAsync()
         {
-            var userId = Guid.Parse(Context.User!.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userId = Guid.Parse(Context.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             var game = await _gameService.CreateGame();
 
-            await Clients.Caller.UpdateParty(_mapper.Map<GameVM>(game));
+            await Groups.AddToGroupAsync(Context.ConnectionId, game.Code);
+            await Clients.Group(game.Code).UpdateParty(_mapper.Map<GameVM>(game));
         }
 
         public override Task OnDisconnectedAsync(Exception? exception)
