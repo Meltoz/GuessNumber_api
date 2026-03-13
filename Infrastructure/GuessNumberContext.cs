@@ -29,6 +29,8 @@ namespace Infrastructure
 
         public DbSet<TokenEntity> Tokens { get; set; }
 
+        public DbSet<GameEntity> Games { get; set; }
+
 
         public GuessNumberContext()
         {

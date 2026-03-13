@@ -45,6 +45,12 @@ namespace Web.Mappings
             CreateMap<AuthUser, AuthUserDetailVM>()
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Mail.ToString()));
             CreateMap<AuthUser, AuthUserSummaryVM>();
+
+            CreateMap<Game, GameConfigurationVM>();
+
+            CreateMap<Game, GameVM>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.Configuration, opt => opt.MapFrom(src => src));
         }
     }
 }

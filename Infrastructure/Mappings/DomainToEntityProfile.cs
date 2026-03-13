@@ -39,6 +39,8 @@ namespace Infrastructure.Mappings
                 .ForMember(dest => dest.IpAddress, opt => opt.MapFrom(src => src.IpAdress.ToString()))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.User.Id))
                 .ForMember(dest => dest.User, opt => opt.Ignore());
+
+            CreateMap<Game, GameEntity>();
         }
 
     }
