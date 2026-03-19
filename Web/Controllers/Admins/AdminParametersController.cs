@@ -13,13 +13,20 @@ namespace Web.Controllers.Admins
 {
     [Route("api")]
     [ApiController]
-    public class AdminParametersController(ActualityService acts, CommunicationService cs, ReportService rs, IMapper m) : ControllerBase
+    public class AdminParametersController : ControllerBase
     {
-        private readonly ActualityService _actualityService = acts;
-        private readonly CommunicationService _communicationService = cs;
-        private readonly ReportService _reportService = rs;
-        private readonly IMapper _mapper = m;
+        private readonly ActualityService _actualityService;
+        private readonly CommunicationService _communicationService;
+        private readonly ReportService _reportService;
+        private readonly IMapper _mapper;
 
+        public AdminParametersController(ActualityService acts, CommunicationService cs, ReportService rs, IMapper m)
+        {
+            _actualityService = acts;
+            _communicationService = cs;
+            _reportService = rs;
+            _mapper = m;
+        }
         #region Actuality 
 
         [HttpGet]

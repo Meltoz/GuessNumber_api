@@ -15,10 +15,16 @@ namespace Web.Controllers.Admins
     [Route("api/[controller]/[action]")]
     [Authorize(Policy =ApiConstants.AdminPolicy)]
     [ApiController]
-    public class AdminCategoryController(CategoryService cs, IMapper m) : ControllerBase
+    public class AdminCategoryController: ControllerBase
     {
-        private readonly CategoryService _categoryService = cs;
-        private readonly IMapper _mapper = m;
+        private readonly CategoryService _categoryService;
+        private readonly IMapper _mapper;
+
+        public AdminCategoryController(CategoryService cs, IMapper m) 
+        {
+            _categoryService = cs;
+            _mapper = m;
+        }
 
         [HttpGet]
         public async Task<IActionResult> Search(int pageIndex, int pageSize, string sort, string search = "")
