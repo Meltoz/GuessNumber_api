@@ -17,7 +17,7 @@ namespace Application.Services
             return await _communicationRepository.Search(skip, pageSize, sortOption, search);
         }
 
-        public async Task<Communication> CreateNew(string content, DateTime start, DateTime? end)
+        public async Task<Communication> CreateNew(string content, DateTime? start, DateTime? end)
         {
             var communication = new Communication(content, start, end);
 
