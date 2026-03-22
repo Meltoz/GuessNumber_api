@@ -13,7 +13,7 @@ namespace Web.ViewModels.Admin
         [Required]
         public string Content { get; set; } = string.Empty;
 
-        public bool Active =>
+        public bool? Active =>
                 !string.IsNullOrEmpty(StartDate) &&
                 DateTime.TryParse(StartDate, out var start) &&
                 DateTime.UtcNow >= start &&
