@@ -5,6 +5,7 @@ using Domain.ValueObjects;
 using Infrastructure.Entities;
 using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using Shared;
 using Shared.Enums.Sorting;
 
@@ -81,6 +82,7 @@ namespace Infrastructure.Repositories
 
         private static IQueryable<UserEntity> ApplySortToUsers(IQueryable<UserEntity> query, SortOption<SortUser> sortOption)
         {
+            query.OrderBy(u => u.Pseudo);
             return sortOption.SortBy switch
             {
                 SortUser.Pseudo => sortOption.Direction == SortDirection.Ascending
