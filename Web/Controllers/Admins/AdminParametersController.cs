@@ -142,8 +142,8 @@ namespace Web.Controllers.Admins
         }
 
         [HttpDelete]
-        [Route("communicationAdmin/delete")]
-        public async Task<IActionResult> DeleteCommunication(Guid idCommunication)
+        [Route("communicationAdmin/delete/{idCommunication}")]
+        public async Task<IActionResult> DeleteCommunication([FromRoute] Guid idCommunication)
         {
             await _communicationService.DeleteAsync(idCommunication);
 
