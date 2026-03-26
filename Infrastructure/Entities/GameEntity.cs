@@ -17,5 +17,7 @@ namespace Infrastructure.Entities
         public int TotalQuestion { get; set; }
 
         public int MaxPlayers { get; set; }
+        
+        public ICollection<PlayerEntity> Players { get; set; }
     }
 }

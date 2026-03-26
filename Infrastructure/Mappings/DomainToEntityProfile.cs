@@ -40,7 +40,14 @@ namespace Infrastructure.Mappings
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.User.Id))
                 .ForMember(dest => dest.User, opt => opt.Ignore());
 
-            CreateMap<Game, GameEntity>();
+            CreateMap<Player, PlayerEntity>()
+                .ForMember(dest => dest.Game, opt => opt.Ignore())
+                .ForMember(dest => dest.User, opt => opt.Ignore());
+            
+            CreateMap<Game, GameEntity>()
+                .ForMember(dest => dest.Players, opt => opt.Ignore());
+            
+            
         }
 
     }

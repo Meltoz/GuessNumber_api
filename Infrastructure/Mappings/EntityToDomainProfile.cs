@@ -40,7 +40,17 @@ namespace Infrastructure.Mappings
             CreateMap<TokenEntity, TokenInfo>()
                 .ForMember(dest => dest.IpAdress, opt => opt.MapFrom(src => IPAddress.Parse(src.IpAddress)));
 
-            CreateMap<GameEntity, Game>();
+            CreateMap<UserEntity, Domain.User.User>()
+                .ConstructUsing((src, ctx) => ctx.Mapper.Map<GuestUser>(src));
+
+            CreateMap<PlayerEntity, Player>();
+
+            CreateMap<GameEntity, Game>()
+                .AfterMap((src, dest, ctx) =>
+                {
+                    if (src.Players != null)
+                        dest.InitializePlayers(ctx.Mapper.Map<List<Player>>(src.Players));
+                });
         }
     }
 }

@@ -4,6 +4,7 @@
     {
         Creating,
         Playing,
-        Finished
+        Finished,
+        Cancelled
     }
 }

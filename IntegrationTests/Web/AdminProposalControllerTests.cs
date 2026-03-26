@@ -7,7 +7,7 @@ using Web.ViewModels.Admin;
 
 namespace IntegrationTests.Web
 {
-    public class AdminProposalControllerTests
+    public class AdminProposalControllerTests : IDisposable
     {
         private readonly HttpClient _client;
         private readonly CustomWebApplicationFactory _factory;
@@ -841,5 +841,12 @@ namespace IntegrationTests.Web
         }
 
         #endregion
+
+        public void Dispose()
+        {
+            _client.Dispose();
+            _factory.Dispose();
+            _context.Dispose();
+        }
     }
 }

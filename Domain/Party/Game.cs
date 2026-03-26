@@ -19,11 +19,17 @@ public class Game
 
     public int MaxPlayers { get; private set; }
 
+    private readonly List<Player> _players = [];
+
+    public IReadOnlyCollection<Player> Players => _players;
+
     private  Game() { }
     
     public Game(string code, GameStatus status, GameType type, int maxQuestion, int maxPlayers)
     {
         Code = Code.Create(code);
+        Status = status;
+        Type = type;
         ChangeTotalQuestion(maxQuestion);
         CurrentQuestion = 0;
         ChangeMaxPlayers(maxPlayers);
@@ -32,6 +38,8 @@ public class Game
     public Game(Code code, GameStatus status, GameType type, int maxQuestion, int maxPlayers)
     {
         Code = code;
+        Status = status;
+        Type = type;
         ChangeTotalQuestion(maxQuestion);
         CurrentQuestion = 0;
         ChangeMaxPlayers(maxPlayers);
@@ -60,8 +68,8 @@ public class Game
 
     public void ChangeTotalQuestion(int totalQuestion)
     {
-        if(TotalQuestion < 0 && TotalQuestion > 50)
-            throw new ArgumentOutOfRangeException(nameof(TotalQuestion));
+        if(totalQuestion < 0 || totalQuestion > 50)
+            throw new ArgumentOutOfRangeException(nameof(totalQuestion));
 
         TotalQuestion = totalQuestion;
     }
@@ -76,8 +84,40 @@ public class Game
 
     public bool IsJoinable()
     {
-        // TODO : avec les joueurs implementer il faudra vérifier qu'on dépasse pas le nombre max de joueur
-        return true;
+        var statusUnjoinable = new HashSet<GameStatus>
+        {
+            GameStatus.Cancelled,
+            GameStatus.Finished,
+        };
+        return _players.Count < MaxPlayers && !statusUnjoinable.Contains(Status);
+    }
+
+    public void AddPlayer(User.User user, string connectionId, RoleParty role = RoleParty.Player)
+    {
+        if(_players.Count >= MaxPlayers)
+            throw new InvalidOperationException("Maximum number of players exceeded");
+
+        _players.Add(new Player(user, role, connectionId));
+    }
+
+    public void RemovePlayer(string connectionId)
+    {
+        var player = _players.FirstOrDefault(p => p.ConnectionId == connectionId);
+        if (player is null)
+            throw new InvalidOperationException("Player not found");
+        _players.Remove(player);
+    }
+
+    public void InitializePlayers(IEnumerable<Player> players)
+    {
+        _players.Clear();
+        _players.AddRange(players);
+    }
+
+    public void CancelGame()
+    {
+        Status = GameStatus.Cancelled;
+        CurrentQuestion = TotalQuestion;
     }
 }
 

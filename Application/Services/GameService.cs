@@ -1,6 +1,8 @@
 ﻿using Application.Interfaces.Repository;
 using Application.Interfaces.Web;
+using Domain.Enums;
 using Domain.Party;
+using Domain.User;
 
 namespace Application.Services;
 
@@ -27,5 +29,29 @@ public class GameService
         var game = await _gameRepository.FindByCode(code);
 
         return game.IsJoinable();
+    }
+
+    public async Task<Game> JoinGame(string code, User user, RoleParty role, string connectionId)
+    {
+        var game = await _gameRepository.FindByCode(code);
+
+        game.AddPlayer(user, connectionId, role);
+
+        return await _gameRepository.UpdateAsync(game);
+    }
+
+    public async Task<Game?> LeaveGame(string connectionId)
+    {
+        var game = await _gameRepository.FindByConnectionId(connectionId);
+        if (game is null)
+            return null;
+
+        game.RemovePlayer(connectionId);
+        if (game.Players.Count == 0)
+        {
+            game.CancelGame();
+        }
+
+        return await _gameRepository.UpdateAsync(game);
     }
 }

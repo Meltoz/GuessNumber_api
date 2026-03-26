@@ -46,11 +46,16 @@ namespace Web.Mappings
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Mail.ToString()));
             CreateMap<AuthUser, AuthUserSummaryVM>();
 
+            CreateMap<Player, PlayerVM>()
+                .ForMember(dest => dest.Pseudo, opt => opt.MapFrom(src => src.User.Pseudo.ToString()))
+                .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.User.Avatar));
+
             CreateMap<Game, GameConfigurationVM>();
 
             CreateMap<Game, GameVM>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-                .ForMember(dest => dest.Configuration, opt => opt.MapFrom(src => src));
+                .ForMember(dest => dest.Configuration, opt => opt.MapFrom(src => src))
+                .ForMember(dest => dest.Players, opt => opt.MapFrom(src => src.Players));
         }
     }
 }

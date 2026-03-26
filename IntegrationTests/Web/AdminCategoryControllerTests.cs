@@ -17,7 +17,7 @@ using Web.ViewModels.Admin;
 
 namespace IntegrationTests.Web
 {
-    public class AdminCategoryControllerTests
+    public class AdminCategoryControllerTests : IDisposable
     {
         private readonly HttpClient _client;
         private readonly CustomWebApplicationFactory _factory;
@@ -1373,5 +1373,12 @@ namespace IntegrationTests.Web
             Assert.Equal(System.Net.HttpStatusCode.NotFound, getResponse.StatusCode);
         }
         #endregion
+
+        public void Dispose()
+        {
+            _client.Dispose();
+            _factory.Dispose();
+            _context.Dispose();
+        }
     }
 }

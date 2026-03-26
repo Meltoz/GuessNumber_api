@@ -8,7 +8,7 @@ using Web.ViewModels;
 
 namespace IntegrationTests.Web
 {
-    public class HomeControllerTests
+    public class HomeControllerTests : IDisposable
     {
         private readonly HttpClient _client;
         private readonly CustomWebApplicationFactory _factory;
@@ -1772,5 +1772,12 @@ namespace IntegrationTests.Web
         }
 
         #endregion
+
+        public void Dispose()
+        {
+            _client.Dispose();
+            _factory.Dispose();
+            _context.Dispose();
+        }
     }
 }
