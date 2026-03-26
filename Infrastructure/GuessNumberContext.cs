@@ -88,6 +88,7 @@ namespace Infrastructure
                 entity.HasDiscriminator<bool>("IsAuthUser")
                 .HasValue<UserEntity>(false)
                 .HasValue<AuthUserEntity>(true);
+                
             });
 
             modelBuilder.Entity<AuthUserEntity>(entity =>
@@ -98,6 +99,17 @@ namespace Infrastructure
                 .OnDelete(DeleteBehavior.Cascade);
             });
 
+            modelBuilder.Entity<PlayerEntity>(entity =>
+            {
+                entity.HasOne(p => p.Game)
+                    .WithMany(g => g.Players)
+                    .HasForeignKey(p => p.GameId);
+                
+                entity.HasOne(p => p.User)
+                    .WithMany()
+                    .HasForeignKey(p => p.UserId);
+            });
+            
             if (_encryptionService is not null)
             {
                 var tokenConverter = new TokenValueConverter(_encryptionService, null);

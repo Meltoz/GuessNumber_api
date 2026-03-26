@@ -248,7 +248,7 @@ namespace UnitTests.Application
         }
 
         [Fact]
-        public async Task CreateTokenAsync_ShouldSetAccessExpiresAt_30MinutesFromNow()
+        public async Task CreateTokenAsync_ShouldSetAccessExpiresAt_5MinutesFromNow()
         {
             // Arrange
             var user = CreateTestUser();
@@ -268,8 +268,8 @@ namespace UnitTests.Application
             // Assert
             var afterCall = DateTime.UtcNow;
             Assert.NotNull(capturedToken);
-            Assert.True(capturedToken.AccessExpiresAt >= beforeCall.AddMinutes(30));
-            Assert.True(capturedToken.AccessExpiresAt <= afterCall.AddMinutes(30));
+            Assert.True(capturedToken.AccessExpiresAt >= beforeCall.AddMinutes(5));
+            Assert.True(capturedToken.AccessExpiresAt <= afterCall.AddMinutes(5));
         }
 
         [Fact]

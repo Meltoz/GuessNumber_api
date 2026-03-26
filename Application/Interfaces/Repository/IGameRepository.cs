@@ -3,7 +3,8 @@
 namespace Application.Interfaces.Repository
 {
     public interface IGameRepository : IRepository<Game>
-    {   
+    {
         public Task<Game> FindByCode(string code);
+        public Task<Game?> FindByConnectionId(string connectionId);
     }
 }

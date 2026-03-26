@@ -46,7 +46,7 @@ namespace Web.Controllers
 
 
             if (!actualities.Any())
-                return Ok();
+                return NotFound();
 
             return Ok(_mapper.Map<IEnumerable<ActualityVM>>(actualities));
         }

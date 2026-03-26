@@ -130,7 +130,7 @@ namespace Web
                 app.UseSwaggerUI();
             }
 
-            //Application des migrationsAhh
+            //Application des migrations
             if (!app.Environment.IsEnvironment("Testing"))
             {
                 using var scope = app.Services.CreateScope();

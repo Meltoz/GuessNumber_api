@@ -10,7 +10,7 @@ using Web.ViewModels.Admin;
 
 namespace IntegrationTests.Web
 {
-    public class AdminParametersTests
+    public class AdminParametersTests : IDisposable
     {
         private readonly HttpClient _client;
         private readonly CustomWebApplicationFactory _factory;
@@ -804,7 +804,7 @@ namespace IntegrationTests.Web
             await _context.SaveChangesAsync();
 
             // Act
-            var response = await _client.DeleteAsync($"/api/communicationAdmin/delete?idCommunication={communication.Id}");
+            var response = await _client.DeleteAsync($"/api/communicationAdmin/delete/{communication.Id}");
 
             // Assert
             response.EnsureSuccessStatusCode();
@@ -821,7 +821,7 @@ namespace IntegrationTests.Web
             var nonExistentId = Guid.NewGuid();
 
             // Act
-            var response = await _client.DeleteAsync($"/api/communicationAdmin/delete?idCommunication={nonExistentId}");
+            var response = await _client.DeleteAsync($"/api/communicationAdmin/delete/{nonExistentId}");
 
             // Assert
             Assert.False(response.IsSuccessStatusCode);
@@ -831,7 +831,7 @@ namespace IntegrationTests.Web
         public async Task DeleteCommunication_WithInvalidGuid_ShouldReturnBadRequest()
         {
             // Act
-            var response = await _client.DeleteAsync("/api/communicationAdmin/delete?idCommunication=invalid-guid");
+            var response = await _client.DeleteAsync("/api/communicationAdmin/delete/invalid-guid");
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -1420,5 +1420,11 @@ namespace IntegrationTests.Web
 
         #endregion
 
+        public void Dispose()
+        {
+            _client.Dispose();
+            _factory.Dispose();
+            _context.Dispose();
+        }
     }
 }

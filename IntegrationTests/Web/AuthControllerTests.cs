@@ -15,7 +15,7 @@ using System.Text;
 
 namespace IntegrationTests.Web
 {
-    public class AuthControllerTests
+    public class AuthControllerTests : IDisposable
     {
         private readonly HttpClient _client;
         private readonly CustomWebApplicationFactory _factory;
@@ -471,5 +471,12 @@ namespace IntegrationTests.Web
         }
 
         #endregion
+
+        public void Dispose()
+        {
+            _client.Dispose();
+            _factory.Dispose();
+            _context.Dispose();
+        }
     }
 }

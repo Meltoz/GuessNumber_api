@@ -13,7 +13,7 @@ using Web.ViewModels.Admin;
 
 namespace IntegrationTests.Web
 {
-    public class AdminQuestionControllerTests
+    public class AdminQuestionControllerTests : IDisposable
     {
         private readonly HttpClient _client;
         private readonly CustomWebApplicationFactory _factory;
@@ -1775,6 +1775,13 @@ namespace IntegrationTests.Web
             _context.ChangeTracker.Clear();
 
             return questionId;
+        }
+
+        public void Dispose()
+        {
+            _client.Dispose();
+            _factory.Dispose();
+            _context.Dispose();
         }
     }
 }
