@@ -3,6 +3,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
+using Domain.Enums;
 using Domain.User;
 using Web.Constants;
 using Web.Hubs.Interfaces;
@@ -35,14 +36,15 @@ namespace Web.Hubs
             await Groups.AddToGroupAsync(Context.ConnectionId, game.Code);
             await Clients.Group(game.Code).UpdateParty(_mapper.Map<GameVM>(game));
         }
-
-        [Authorize(Policy = ApiConstants.AuthenticatedUserPolicy)]
+        
         public async Task JoinPartyAsync(string code)
         {
-            var userId = Guid.Parse(Context.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var user = await _userService.GetDetail(userId) as AuthUser;
+            var claim = Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            
+            var user = claim != null ? await _userService.GetDetail(Guid.Parse(claim)) 
+                    : await _userService.CreateDefaultUser();
 
-            var game = await _gameService.JoinGame(code, user, Domain.Enums.RoleParty.Player, Context.ConnectionId);
+            var game = await _gameService.JoinGame(code, user, RoleParty.Player, Context.ConnectionId);
 
             await Groups.AddToGroupAsync(Context.ConnectionId, game.Code);
             await Clients.Group(game.Code).UpdateParty(_mapper.Map<GameVM>(game));
