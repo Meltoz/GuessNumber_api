@@ -19,5 +19,8 @@ namespace Infrastructure.Entities
         public int MaxPlayers { get; set; }
         
         public ICollection<PlayerEntity> Players { get; set; }
+        
+        public ICollection<GameCategoriesEntity> Categories { get; set; }
+        
     }
 }

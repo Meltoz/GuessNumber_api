@@ -1,7 +1,6 @@
 using Domain.Enums;
 using Domain.Exceptions;
 using Domain.Party;
-using Domain.User;
 
 namespace UnitTests.Domain
 {
@@ -13,30 +12,32 @@ namespace UnitTests.Domain
         public void Constructor_WithPlayerRole_ShouldCreatePlayer()
         {
             // Arrange
-            var user = CreateValidUser();
+            var (userId, pseudo, avatar) = CreateValidUserData();
             var role = RoleParty.Player;
             var connectionId = "conn-123";
 
             // Act
-            var player = new Player(user, role, connectionId);
+            var player = new Player(userId, pseudo, avatar, role, connectionId);
 
             // Assert
             Assert.Equal(role, player.Role);
             Assert.Equal(connectionId, player.ConnectionId);
             Assert.Equal(0, player.Score);
-            Assert.Equal(user, player.User);
+            Assert.Equal(userId, player.UserId);
+            Assert.Equal(pseudo, player.Pseudo);
+            Assert.Equal(avatar, player.Avatar);
         }
 
         [Fact]
         public void Constructor_WithOwnerRole_ShouldCreatePlayerWithOwnerRole()
         {
             // Arrange
-            var user = CreateValidUser();
+            var (userId, pseudo, avatar) = CreateValidUserData();
             var role = RoleParty.Owner;
             var connectionId = "conn-owner";
 
             // Act
-            var player = new Player(user, role, connectionId);
+            var player = new Player(userId, pseudo, avatar, role, connectionId);
 
             // Assert
             Assert.Equal(RoleParty.Owner, player.Role);
@@ -47,23 +48,27 @@ namespace UnitTests.Domain
         public void Constructor_ShouldInitializeScoreToZero()
         {
             // Arrange & Act
-            var player = new Player(CreateValidUser(), RoleParty.Player, "conn-abc");
+            var player = CreateValidPlayer();
 
             // Assert
             Assert.Equal(0, player.Score);
         }
 
         [Fact]
-        public void Constructor_ShouldAssociateUser()
+        public void Constructor_ShouldStoreUserData()
         {
             // Arrange
-            var user = new GuestUser("PlayerOne", "avatar.png");
+            var userId = Guid.NewGuid();
+            var pseudo = "PlayerOne";
+            var avatar = "avatar.png";
 
             // Act
-            var player = new Player(user, RoleParty.Player, "conn-123");
+            var player = new Player(userId, pseudo, avatar, RoleParty.Player, "conn-123");
 
             // Assert
-            Assert.Equal(user, player.User);
+            Assert.Equal(userId, player.UserId);
+            Assert.Equal(pseudo, player.Pseudo);
+            Assert.Equal(avatar, player.Avatar);
         }
 
         #endregion
@@ -74,33 +79,31 @@ namespace UnitTests.Domain
         public void Constructor_WithNullConnectionId_ShouldThrowArgumentNullException()
         {
             // Arrange
-            var role = RoleParty.Player;
+            var (userId, pseudo, avatar) = CreateValidUserData();
             string connectionId = null;
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new Player(CreateValidUser(), role, connectionId));
+            Assert.Throws<ArgumentNullException>(() => new Player(userId, pseudo, avatar, RoleParty.Player, connectionId));
         }
 
         [Fact]
         public void Constructor_WithEmptyConnectionId_ShouldThrowArgumentNullException()
         {
             // Arrange
-            var role = RoleParty.Player;
-            var connectionId = "";
+            var (userId, pseudo, avatar) = CreateValidUserData();
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new Player(CreateValidUser(), role, connectionId));
+            Assert.Throws<ArgumentNullException>(() => new Player(userId, pseudo, avatar, RoleParty.Player, ""));
         }
 
         [Fact]
         public void Constructor_WithWhitespaceConnectionId_ShouldThrowArgumentNullException()
         {
             // Arrange
-            var role = RoleParty.Player;
-            var connectionId = "   ";
+            var (userId, pseudo, avatar) = CreateValidUserData();
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new Player(CreateValidUser(), role, connectionId));
+            Assert.Throws<ArgumentNullException>(() => new Player(userId, pseudo, avatar, RoleParty.Player, "   "));
         }
 
         #endregion
@@ -192,9 +195,14 @@ namespace UnitTests.Domain
 
         #region Helper Methods
 
-        private static GuestUser CreateValidUser() => new GuestUser("TestUser", "avatar.png");
+        private static (Guid userId, string pseudo, string avatar) CreateValidUserData() =>
+            (Guid.NewGuid(), "TestUser", "avatar.png");
 
-        private Player CreateValidPlayer() => new Player(CreateValidUser(), RoleParty.Player, "conn-123");
+        private Player CreateValidPlayer()
+        {
+            var (userId, pseudo, avatar) = CreateValidUserData();
+            return new Player(userId, pseudo, avatar, RoleParty.Player, "conn-123");
+        }
 
         #endregion
     }

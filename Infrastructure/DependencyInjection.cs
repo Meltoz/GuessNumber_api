@@ -12,8 +12,7 @@ namespace Infrastructure
     {
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config, string env)
         {
-
-            // 1️ Si on n'est pas en Testing, on configure la base PostgreSQL
+            
             if (env != "Testing")
             {
                 var defaultConnection = config.GetConnectionString("DefaultConnection");

@@ -47,10 +47,13 @@ namespace Web.Mappings
             CreateMap<AuthUser, AuthUserSummaryVM>();
 
             CreateMap<Player, PlayerVM>()
-                .ForMember(dest => dest.Pseudo, opt => opt.MapFrom(src => src.User.Pseudo.ToString()))
-                .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.User.Avatar));
+                .ForMember(dest => dest.Pseudo, opt => opt.MapFrom(src => src.Pseudo))
+                .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.Avatar));
 
-            CreateMap<Game, GameConfigurationVM>();
+            CreateMap<Category, CategoryVM>();
+
+            CreateMap<Game, GameConfigurationVM>()
+                .ForMember(dest => dest.Categories, opt => opt.MapFrom(src => src.Categories));
 
             CreateMap<Game, GameVM>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))

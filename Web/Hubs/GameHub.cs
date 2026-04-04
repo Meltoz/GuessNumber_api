@@ -31,10 +31,16 @@ namespace Web.Hubs
             var user = await _userService.GetDetail(userId) as AuthUser;
             var game = await _gameService.CreateGame();
 
-            game = await _gameService.JoinGame(game.Code, user, Domain.Enums.RoleParty.Owner, Context.ConnectionId);
+            game = await _gameService.JoinGame(game.Code, user, RoleParty.Owner, Context.ConnectionId);
 
             await Groups.AddToGroupAsync(Context.ConnectionId, game.Code);
             await Clients.Group(game.Code).UpdateParty(_mapper.Map<GameVM>(game));
+        }
+
+        [Authorize(Policy = ApiConstants.AuthenticatedUserPolicy)]
+        public async Task UpdatePartyAsync()
+        {
+            var userId = Guid.Parse(Context.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         }
         
         public async Task JoinPartyAsync(string code)
@@ -43,9 +49,11 @@ namespace Web.Hubs
             
             var user = claim != null ? await _userService.GetDetail(Guid.Parse(claim)) 
                     : await _userService.CreateDefaultUser();
-
+            
+            
             var game = await _gameService.JoinGame(code, user, RoleParty.Player, Context.ConnectionId);
 
+            
             await Groups.AddToGroupAsync(Context.ConnectionId, game.Code);
             await Clients.Group(game.Code).UpdateParty(_mapper.Map<GameVM>(game));
         }

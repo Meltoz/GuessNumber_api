@@ -9,5 +9,8 @@
 
         public const string AdminPolicy = "AdminOnly";
         public const string AuthenticatedUserPolicy = "Authenticated";
+
+        public const int AccessTokenDuration = 30;
+        public const int RefreshTokenDuration = 30;
     }
 }

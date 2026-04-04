@@ -1,4 +1,5 @@
 ﻿using Domain.Enums;
+using Domain.Exceptions;
 using Domain.ValueObjects;
 
 namespace Domain.Party;
@@ -22,6 +23,12 @@ public class Game
     private readonly List<Player> _players = [];
 
     public IReadOnlyCollection<Player> Players => _players;
+
+    private readonly List<Guid> _categoryIds = [];
+    public IReadOnlyCollection<Guid> CategoryIds => _categoryIds;
+
+    private readonly List<Category> _categories = [];
+    public IReadOnlyCollection<Category> Categories => _categories;
 
     private  Game() { }
     
@@ -92,12 +99,12 @@ public class Game
         return _players.Count < MaxPlayers && !statusUnjoinable.Contains(Status);
     }
 
-    public void AddPlayer(User.User user, string connectionId, RoleParty role = RoleParty.Player)
+    public void AddPlayer(Guid userId, string pseudo, string avatar, string connectionId, RoleParty role = RoleParty.Player)
     {
-        if(_players.Count >= MaxPlayers)
+        if (_players.Count >= MaxPlayers)
             throw new InvalidOperationException("Maximum number of players exceeded");
 
-        _players.Add(new Player(user, role, connectionId));
+        _players.Add(new Player(userId, pseudo, avatar, role, connectionId));
     }
 
     public void RemovePlayer(string connectionId)
@@ -114,10 +121,32 @@ public class Game
         _players.AddRange(players);
     }
 
+    public void InitializeCategories(IEnumerable<Guid> categoryIds)
+    {
+        _categoryIds.Clear();
+        _categoryIds.AddRange(categoryIds);
+    }
+
+    public void InitializeResolvedCategories(IEnumerable<Category> categories)
+    {
+        _categories.Clear();
+        _categories.AddRange(categories);
+    }
+
     public void CancelGame()
     {
         Status = GameStatus.Cancelled;
         CurrentQuestion = TotalQuestion;
+    }
+
+    public void SetCategories(IReadOnlyCollection<Guid> categoryIds)
+    {
+        ArgumentNullException.ThrowIfNull(categoryIds);
+
+        ArgumentEmptyException.ThrowIfEmpty(categoryIds, nameof(categoryIds));
+
+        _categoryIds.Clear();
+        _categoryIds.AddRange(categoryIds);
     }
 }
 

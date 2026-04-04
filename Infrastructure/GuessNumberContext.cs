@@ -101,13 +101,27 @@ namespace Infrastructure
 
             modelBuilder.Entity<PlayerEntity>(entity =>
             {
+                entity.ToTable("Players");
+
                 entity.HasOne(p => p.Game)
                     .WithMany(g => g.Players)
                     .HasForeignKey(p => p.GameId);
-                
-                entity.HasOne(p => p.User)
+            });
+
+            modelBuilder.Entity<GameCategoriesEntity>(entity =>
+            {
+                entity.ToTable("GameCategories");
+
+                entity.HasKey(gc => new { gc.CategoryId, gc.GameId });
+
+                entity.HasOne(gc => gc.Game)
+                    .WithMany(g => g.Categories)
+                    .HasForeignKey(gc => gc.GameId);
+
+                entity.HasOne(gc => gc.Category)
                     .WithMany()
-                    .HasForeignKey(p => p.UserId);
+                    .HasForeignKey(gc => gc.CategoryId);
+                
             });
             
             if (_encryptionService is not null)

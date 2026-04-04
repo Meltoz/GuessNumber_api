@@ -1,6 +1,5 @@
 using Domain.Enums;
 using Domain.Party;
-using Domain.User;
 
 namespace UnitTests.Domain
 {
@@ -255,8 +254,8 @@ namespace UnitTests.Domain
         {
             // Arrange
             var game = new Game("ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 2);
-            game.AddPlayer(CreateValidUser(), "conn-1");
-            game.AddPlayer(CreateValidUser(), "conn-2");
+            game.AddPlayer(Guid.NewGuid(), "User1", "avatar.png", "conn-1");
+            game.AddPlayer(Guid.NewGuid(), "User2", "avatar.png", "conn-2");
 
             // Act & Assert
             Assert.False(game.IsJoinable());
@@ -267,7 +266,7 @@ namespace UnitTests.Domain
         {
             // Arrange
             var game = new Game("ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 4);
-            game.AddPlayer(CreateValidUser(), "conn-1");
+            game.AddPlayer(Guid.NewGuid(), "User1", "avatar.png", "conn-1");
 
             // Act & Assert
             Assert.True(game.IsJoinable());
@@ -282,10 +281,10 @@ namespace UnitTests.Domain
         {
             // Arrange
             var game = CreateValidGame();
-            var user = CreateValidUser();
+            var (userId, pseudo, avatar) = CreateValidUserData();
 
             // Act
-            game.AddPlayer(user, "conn-1");
+            game.AddPlayer(userId, pseudo, avatar, "conn-1");
 
             // Assert
             Assert.Single(game.Players);
@@ -298,7 +297,7 @@ namespace UnitTests.Domain
             var game = CreateValidGame();
 
             // Act
-            game.AddPlayer(CreateValidUser(), "conn-1");
+            game.AddPlayer(Guid.NewGuid(), "TestUser", "avatar.png", "conn-1");
 
             // Assert
             Assert.Equal(RoleParty.Player, game.Players.First().Role);
@@ -311,24 +310,28 @@ namespace UnitTests.Domain
             var game = CreateValidGame();
 
             // Act
-            game.AddPlayer(CreateValidUser(), "conn-1", RoleParty.Owner);
+            game.AddPlayer(Guid.NewGuid(), "TestUser", "avatar.png", "conn-1", RoleParty.Owner);
 
             // Assert
             Assert.Equal(RoleParty.Owner, game.Players.First().Role);
         }
 
         [Fact]
-        public void AddPlayer_ShouldAssociateUserToPlayer()
+        public void AddPlayer_ShouldStoreUserData()
         {
             // Arrange
             var game = CreateValidGame();
-            var user = CreateValidUser();
+            var userId = Guid.NewGuid();
+            var pseudo = "TestUser";
+            var avatar = "avatar.png";
 
             // Act
-            game.AddPlayer(user, "conn-1");
+            game.AddPlayer(userId, pseudo, avatar, "conn-1");
 
             // Assert
-            Assert.Equal(user, game.Players.First().User);
+            Assert.Equal(userId, game.Players.First().UserId);
+            Assert.Equal(pseudo, game.Players.First().Pseudo);
+            Assert.Equal(avatar, game.Players.First().Avatar);
         }
 
         [Fact]
@@ -338,9 +341,9 @@ namespace UnitTests.Domain
             var game = new Game("ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 3);
 
             // Act
-            game.AddPlayer(CreateValidUser(), "conn-1");
-            game.AddPlayer(CreateValidUser(), "conn-2");
-            game.AddPlayer(CreateValidUser(), "conn-3");
+            game.AddPlayer(Guid.NewGuid(), "User1", "avatar.png", "conn-1");
+            game.AddPlayer(Guid.NewGuid(), "User2", "avatar.png", "conn-2");
+            game.AddPlayer(Guid.NewGuid(), "User3", "avatar.png", "conn-3");
 
             // Assert
             Assert.Equal(3, game.Players.Count);
@@ -355,10 +358,10 @@ namespace UnitTests.Domain
         {
             // Arrange
             var game = new Game("ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 1);
-            game.AddPlayer(CreateValidUser(), "conn-1");
+            game.AddPlayer(Guid.NewGuid(), "User1", "avatar.png", "conn-1");
 
             // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => game.AddPlayer(CreateValidUser(), "conn-2"));
+            Assert.Throws<InvalidOperationException>(() => game.AddPlayer(Guid.NewGuid(), "User2", "avatar.png", "conn-2"));
         }
 
         #endregion
@@ -368,8 +371,8 @@ namespace UnitTests.Domain
         private static Game CreateValidGame() =>
             new Game("ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 4);
 
-        private static GuestUser CreateValidUser() =>
-            new GuestUser("TestUser", "avatar.png");
+        private static (Guid userId, string pseudo, string avatar) CreateValidUserData() =>
+            (Guid.NewGuid(), "TestUser", "avatar.png");
 
         #endregion
     }

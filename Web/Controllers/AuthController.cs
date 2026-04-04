@@ -64,8 +64,10 @@ namespace Web.Controllers
             };
 
             var token = await _tokenService.CreateTokenAsync(userFinded, claims, userAgent.ToString(), ipAddress);
-            Response.AppendCookie(ApiConstants.AccessTokenCookieName, token.Item1.ToString(), TimeSpan.FromMinutes(5), httpOnly: false);
-            Response.AppendCookie(ApiConstants.RefreshTokenCookieName, token.Item2.RefreshToken.ToString(), TimeSpan.FromDays(30));
+            Response.AppendCookie(ApiConstants.AccessTokenCookieName, token.Item1.ToString(), 
+                TimeSpan.FromMinutes(ApiConstants.AccessTokenDuration), httpOnly: false);
+            Response.AppendCookie(ApiConstants.RefreshTokenCookieName, token.Item2.RefreshToken.ToString(), 
+                TimeSpan.FromDays(ApiConstants.RefreshTokenDuration));
             
             return Ok();
         }
@@ -126,8 +128,10 @@ namespace Web.Controllers
 
             var newToken = await _tokenService.CreateTokenAsync(token.User, claims, userAgent.ToString(), ipAddress);
 
-            Response.AppendCookie(ApiConstants.AccessTokenCookieName, newToken.Item1.ToString(), TimeSpan.FromMinutes(5), httpOnly: false);
-            Response.AppendCookie(ApiConstants.RefreshTokenCookieName, newToken.Item2.RefreshToken.ToString(), TimeSpan.FromDays(30));
+            Response.AppendCookie(ApiConstants.AccessTokenCookieName, newToken.Item1.ToString(), 
+                TimeSpan.FromMinutes(ApiConstants.AccessTokenDuration), httpOnly: false);
+            Response.AppendCookie(ApiConstants.RefreshTokenCookieName, newToken.Item2.RefreshToken.ToString(), 
+                TimeSpan.FromDays(ApiConstants.RefreshTokenDuration));
             return Ok();
         }
 

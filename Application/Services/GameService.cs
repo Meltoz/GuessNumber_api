@@ -10,16 +10,23 @@ public class GameService
 {
     private readonly IGameHubNotifier _hubNotifier;
     private readonly IGameRepository _gameRepository;
+    private readonly ICategoryRepository _categoryRepository;
 
-    public GameService(IGameHubNotifier hn, IGameRepository gr)
+    public GameService(IGameHubNotifier hn, IGameRepository gr, ICategoryRepository cr)
     {
         _hubNotifier = hn;
         _gameRepository = gr;
+        _categoryRepository = cr;
     }
 
     public async Task<Game> CreateGame()
     {
         var game = Game.CreateNew();
+
+        var categories = await _categoryRepository.GetAllAsync();
+        var categoryIds = categories.Select(c => c.Id).ToList();
+        if (categoryIds.Count > 0)
+            game.SetCategories(categoryIds);
 
         return await _gameRepository.InsertAsync(game);
     }
@@ -30,12 +37,14 @@ public class GameService
 
         return game.IsJoinable();
     }
+    
+    
 
     public async Task<Game> JoinGame(string code, User user, RoleParty role, string connectionId)
     {
         var game = await _gameRepository.FindByCode(code);
 
-        game.AddPlayer(user, connectionId, role);
+        game.AddPlayer(user.Id, user.Pseudo.ToString(), user.Avatar, connectionId, role);
 
         return await _gameRepository.UpdateAsync(game);
     }
