@@ -13,7 +13,7 @@ namespace Infrastructure.Repositories
         {
             var game = await _dbSet
                 .Include(g => g.Players)
-                .ThenInclude(p => p.User)
+                .Include(g => g.Categories).ThenInclude(gc => gc.Category)
                 .Where(g => g.Code.ToLower() == code.ToLower())
                 .SingleOrDefaultAsync();
 
@@ -24,7 +24,7 @@ namespace Infrastructure.Repositories
         {
             var game = await _dbSet
                 .Include(g => g.Players)
-                .ThenInclude(p => p.User)
+                .Include(g => g.Categories).ThenInclude(gc => gc.Category)
                 .Where(g => g.Players.Any(p => p.ConnectionId == connectionId))
                 .SingleOrDefaultAsync();
 
@@ -61,7 +61,9 @@ namespace Infrastructure.Repositories
                 existingEntity.Players.Add(new PlayerEntity
                 {
                     GameId = existingEntity.Id,
-                    UserId = player.User.Id,
+                    UserId = player.UserId,
+                    Pseudo = player.Pseudo,
+                    Avatar = player.Avatar,
                     Score = player.Score,
                     Role = player.Role,
                     ConnectionId = player.ConnectionId
@@ -81,8 +83,6 @@ namespace Infrastructure.Repositories
 
             await _context.Entry(existingEntity)
                 .Collection(g => g.Players)
-                .Query()
-                .Include(p => p.User)
                 .LoadAsync();
 
             return _mapper.Map<Game>(existingEntity);

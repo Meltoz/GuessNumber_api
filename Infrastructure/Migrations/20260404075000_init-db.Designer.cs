@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(GuessNumberContext))]
-    [Migration("20260323190819_addPlayer")]
-    partial class addPlayer
+    [Migration("20260404075000_init-db")]
+    partial class initdb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -106,6 +106,21 @@ namespace Infrastructure.Migrations
                     b.ToTable("Communications");
                 });
 
+            modelBuilder.Entity("Infrastructure.Entities.GameCategoriesEntity", b =>
+                {
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("CategoryId", "GameId");
+
+                    b.HasIndex("GameId");
+
+                    b.ToTable("GameCategories", (string)null);
+                });
+
             modelBuilder.Entity("Infrastructure.Entities.GameEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -149,6 +164,10 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Avatar")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("ConnectionId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -158,6 +177,10 @@ namespace Infrastructure.Migrations
 
                     b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Pseudo")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("Role")
                         .HasColumnType("integer");
@@ -175,9 +198,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("GameId");
 
-                    b.HasIndex("UserId");
-
-                    b.ToTable("PlayerEntity");
+                    b.ToTable("Players", (string)null);
                 });
 
             modelBuilder.Entity("Infrastructure.Entities.ProposalEntity", b =>
@@ -390,6 +411,25 @@ namespace Infrastructure.Migrations
                     b.HasDiscriminator().HasValue(true);
                 });
 
+            modelBuilder.Entity("Infrastructure.Entities.GameCategoriesEntity", b =>
+                {
+                    b.HasOne("Infrastructure.Entities.CategoryEntity", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Infrastructure.Entities.GameEntity", "Game")
+                        .WithMany("Categories")
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Game");
+                });
+
             modelBuilder.Entity("Infrastructure.Entities.PlayerEntity", b =>
                 {
                     b.HasOne("Infrastructure.Entities.GameEntity", "Game")
@@ -398,15 +438,7 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Infrastructure.Entities.UserEntity", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Game");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Infrastructure.Entities.QuestionEntity", b =>
@@ -438,6 +470,8 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Infrastructure.Entities.GameEntity", b =>
                 {
+                    b.Navigation("Categories");
+
                     b.Navigation("Players");
                 });
 

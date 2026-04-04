@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using Shared.Configuration;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Microsoft.OpenApi;
 using Web.Constants;
 using Web.Hubs;
 using Web.Mappings;
@@ -63,7 +64,20 @@ namespace Web
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             services.AddOpenApi();
             services.AddEndpointsApiExplorer();
-            services.AddSwaggerGen();
+            services.AddSwaggerGen(c =>
+            {
+              c.SwaggerDoc("v3", new OpenApiInfo
+              {
+                  Version = "v3",
+                  Title = "GuessNumber API",
+                  Description = "API for guessnumber game",
+                  Contact =  new OpenApiContact
+                  {
+                      Name = "Guess Number",
+                      Email = "maxime.marin2015@gmail.com",
+                  }
+              });  
+            });
 
             // Configure DI Service
             services.AddApplication();

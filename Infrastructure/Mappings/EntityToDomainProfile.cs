@@ -43,13 +43,30 @@ namespace Infrastructure.Mappings
             CreateMap<UserEntity, Domain.User.User>()
                 .ConstructUsing((src, ctx) => ctx.Mapper.Map<GuestUser>(src));
 
-            CreateMap<PlayerEntity, Player>();
+            CreateMap<PlayerEntity, Player>()
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.Pseudo, opt => opt.MapFrom(src => src.Pseudo))
+                .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.Avatar));
+
 
             CreateMap<GameEntity, Game>()
+                .ForMember(dest => dest.Players, opt => opt.Ignore())
+                .ForMember(dest => dest.Categories, opt => opt.Ignore())
+                .ForMember(dest => dest.CategoryIds, opt => opt.Ignore())
                 .AfterMap((src, dest, ctx) =>
                 {
                     if (src.Players != null)
                         dest.InitializePlayers(ctx.Mapper.Map<List<Player>>(src.Players));
+
+                    if (src.Categories != null)
+                    {
+                        dest.InitializeCategories(src.Categories.Select(gc => gc.CategoryId));
+
+                        var resolved = src.Categories
+                            .Where(gc => gc.Category != null)
+                            .Select(gc => ctx.Mapper.Map<Category>(gc.Category));
+                        dest.InitializeResolvedCategories(resolved);
+                    }
                 });
         }
     }

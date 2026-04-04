@@ -14,7 +14,9 @@ public class PlayerEntity : BaseEntity
     public GameEntity Game { get; set; }
     
     public Guid UserId { get; set; }
-    
-    public UserEntity User { get; set; }
-    
+
+    public string Pseudo { get; set; }
+
+    public string Avatar { get; set; }
+
 }
