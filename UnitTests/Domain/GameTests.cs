@@ -16,8 +16,8 @@ namespace UnitTests.Domain
             // Assert
             Assert.Equal(GameStatus.Creating, game.Status);
             Assert.Equal(GameType.Private, game.Type);
-            Assert.Equal(20, game.TotalQuestion);
-            Assert.Equal(8, game.MaxPlayers);
+            Assert.Equal(20, game.Settings.TotalQuestion);
+            Assert.Equal(8, game.Settings.MaxPlayers);
             Assert.Equal(0, game.CurrentQuestion);
             Assert.Empty(game.Players);
         }
@@ -50,8 +50,8 @@ namespace UnitTests.Domain
             Assert.Equal(code, game.Code.Value);
             Assert.Equal(GameStatus.Creating, game.Status);
             Assert.Equal(GameType.Private, game.Type);
-            Assert.Equal(10, game.TotalQuestion);
-            Assert.Equal(4, game.MaxPlayers);
+            Assert.Equal(10, game.Settings.TotalQuestion);
+            Assert.Equal(4, game.Settings.MaxPlayers);
             Assert.Equal(0, game.CurrentQuestion);
         }
 
@@ -126,113 +126,153 @@ namespace UnitTests.Domain
 
         #endregion
 
-        #region ChangeTotalQuestion Tests - Cas Nominaux
+        #region UpdateSettings Tests - Cas Nominaux
 
         [Fact]
-        public void ChangeTotalQuestion_WithValidValue_ShouldUpdate()
+        public void UpdateSettings_ChangeTotalQuestion_WithValidValue_ShouldUpdate()
         {
             // Arrange
             var game = CreateValidGame();
 
             // Act
-            game.ChangeTotalQuestion(30);
+            game.UpdateSettings(s => s.ChangeTotalQuestion(30));
 
             // Assert
-            Assert.Equal(30, game.TotalQuestion);
+            Assert.Equal(30, game.Settings.TotalQuestion);
         }
 
         [Fact]
-        public void ChangeTotalQuestion_WithZero_ShouldUpdate()
+        public void UpdateSettings_ChangeTotalQuestion_WithZero_ShouldUpdate()
         {
             // Arrange
             var game = CreateValidGame();
 
             // Act
-            game.ChangeTotalQuestion(0);
+            game.UpdateSettings(s => s.ChangeTotalQuestion(0));
 
             // Assert
-            Assert.Equal(0, game.TotalQuestion);
+            Assert.Equal(0, game.Settings.TotalQuestion);
         }
 
         [Fact]
-        public void ChangeTotalQuestion_WithMaxValue50_ShouldUpdate()
+        public void UpdateSettings_ChangeTotalQuestion_WithMaxValue50_ShouldUpdate()
         {
             // Arrange
             var game = CreateValidGame();
 
             // Act
-            game.ChangeTotalQuestion(50);
+            game.UpdateSettings(s => s.ChangeTotalQuestion(50));
 
             // Assert
-            Assert.Equal(50, game.TotalQuestion);
+            Assert.Equal(50, game.Settings.TotalQuestion);
+        }
+
+        [Fact]
+        public void UpdateSettings_ChangeMaxPlayers_WithValidValue_ShouldUpdate()
+        {
+            // Arrange
+            var game = CreateValidGame();
+
+            // Act
+            game.UpdateSettings(s => s.ChangeMaxPlayers(6));
+
+            // Assert
+            Assert.Equal(6, game.Settings.MaxPlayers);
+        }
+
+        [Fact]
+        public void UpdateSettings_ChangeMaxPlayers_WithMax10_ShouldUpdate()
+        {
+            // Arrange
+            var game = CreateValidGame();
+
+            // Act
+            game.UpdateSettings(s => s.ChangeMaxPlayers(10));
+
+            // Assert
+            Assert.Equal(10, game.Settings.MaxPlayers);
+        }
+
+        [Fact]
+        public void UpdateSettings_MultipleChanges_ShouldUpdateAll()
+        {
+            // Arrange
+            var game = CreateValidGame();
+
+            // Act
+            game.UpdateSettings(s =>
+            {
+                s.ChangeMaxPlayers(6);
+                s.ChangeTotalQuestion(30);
+            });
+
+            // Assert
+            Assert.Equal(6, game.Settings.MaxPlayers);
+            Assert.Equal(30, game.Settings.TotalQuestion);
         }
 
         #endregion
 
-        #region ChangeTotalQuestion Tests - Cas Limites et Erreurs
+        #region UpdateSettings Tests - Cas Limites et Erreurs
 
         [Fact]
-        public void ChangeTotalQuestion_WithNegativeValue_ShouldThrowArgumentOutOfRangeException()
+        public void UpdateSettings_ChangeTotalQuestion_WithNegativeValue_ShouldThrowArgumentOutOfRangeException()
         {
             // Arrange
             var game = CreateValidGame();
 
             // Act & Assert
-            Assert.Throws<ArgumentOutOfRangeException>(() => game.ChangeTotalQuestion(-1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => game.UpdateSettings(s => s.ChangeTotalQuestion(-1)));
         }
 
         [Fact]
-        public void ChangeTotalQuestion_WithValueOver50_ShouldThrowArgumentOutOfRangeException()
+        public void UpdateSettings_ChangeTotalQuestion_WithValueOver50_ShouldThrowArgumentOutOfRangeException()
         {
             // Arrange
             var game = CreateValidGame();
 
             // Act & Assert
-            Assert.Throws<ArgumentOutOfRangeException>(() => game.ChangeTotalQuestion(51));
-        }
-
-        #endregion
-
-        #region ChangeMaxPlayers Tests - Cas Nominaux
-
-        [Fact]
-        public void ChangeMaxPlayers_WithValidValue_ShouldUpdate()
-        {
-            // Arrange
-            var game = CreateValidGame();
-
-            // Act
-            game.ChangeMaxPlayers(6);
-
-            // Assert
-            Assert.Equal(6, game.MaxPlayers);
+            Assert.Throws<ArgumentOutOfRangeException>(() => game.UpdateSettings(s => s.ChangeTotalQuestion(51)));
         }
 
         [Fact]
-        public void ChangeMaxPlayers_WithMax10_ShouldUpdate()
-        {
-            // Arrange
-            var game = CreateValidGame();
-
-            // Act
-            game.ChangeMaxPlayers(10);
-
-            // Assert
-            Assert.Equal(10, game.MaxPlayers);
-        }
-
-        #endregion
-
-        #region ChangeMaxPlayers Tests - Cas Limites et Erreurs
-
-        [Fact]
-        public void ChangeMaxPlayers_WithValueOver10_ShouldThrowArgumentOutOfRangeException()
+        public void UpdateSettings_ChangeMaxPlayers_WithValueOver10_ShouldThrowArgumentOutOfRangeException()
         {
             // Arrange
             var game = CreateValidGame();
 
             // Act & Assert
-            Assert.Throws<ArgumentOutOfRangeException>(() => game.ChangeMaxPlayers(11));
+            Assert.Throws<ArgumentOutOfRangeException>(() => game.UpdateSettings(s => s.ChangeMaxPlayers(11)));
+        }
+
+        [Fact]
+        public void UpdateSettings_WhenGameIsPlaying_ShouldThrowInvalidOperationException()
+        {
+            // Arrange
+            var game = new Game("ABCDEFGHIJ", GameStatus.Playing, GameType.Private, 10, 4);
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() => game.UpdateSettings(s => s.ChangeMaxPlayers(6)));
+        }
+
+        [Fact]
+        public void UpdateSettings_WhenGameIsFinished_ShouldThrowInvalidOperationException()
+        {
+            // Arrange
+            var game = new Game("ABCDEFGHIJ", GameStatus.Finished, GameType.Private, 10, 4);
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() => game.UpdateSettings(s => s.ChangeMaxPlayers(6)));
+        }
+
+        [Fact]
+        public void UpdateSettings_WhenGameIsCancelled_ShouldThrowInvalidOperationException()
+        {
+            // Arrange
+            var game = new Game("ABCDEFGHIJ", GameStatus.Cancelled, GameType.Private, 10, 4);
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() => game.UpdateSettings(s => s.ChangeMaxPlayers(6)));
         }
 
         #endregion

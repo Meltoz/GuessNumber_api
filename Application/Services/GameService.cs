@@ -23,12 +23,14 @@ public class GameService
     {
         var game = Game.CreateNew();
 
-        var categories = await _categoryRepository.GetAllAsync();
-        var categoryIds = categories.Select(c => c.Id).ToList();
+        var allCategories = await _categoryRepository.GetAllAsync();
+        var categoryIds = allCategories.Select(c => c.Id).ToList();
         if (categoryIds.Count > 0)
-            game.SetCategories(categoryIds);
+            game.UpdateSettings(s => s.SetCategories(categoryIds));
 
-        return await _gameRepository.InsertAsync(game);
+        await _gameRepository.InsertAsync(game);
+
+        return await EnrichWithAllCategories(game, allCategories);
     }
 
     public async Task<bool> GameIsJoinable(string code)
@@ -37,8 +39,6 @@ public class GameService
 
         return game.IsJoinable();
     }
-    
-    
 
     public async Task<Game> JoinGame(string code, User user, RoleParty role, string connectionId)
     {
@@ -46,7 +46,9 @@ public class GameService
 
         game.AddPlayer(user.Id, user.Pseudo.ToString(), user.Avatar, connectionId, role);
 
-        return await _gameRepository.UpdateAsync(game);
+        await _gameRepository.UpdateAsync(game);
+
+        return await EnrichWithAllCategories(game);
     }
 
     public async Task<Game?> LeaveGame(string connectionId)
@@ -57,10 +59,33 @@ public class GameService
 
         game.RemovePlayer(connectionId);
         if (game.Players.Count == 0)
-        {
             game.CancelGame();
-        }
 
-        return await _gameRepository.UpdateAsync(game);
+        await _gameRepository.UpdateAsync(game);
+
+        return await EnrichWithAllCategories(game);
+    }
+
+    public async Task<Game> UpdateGameSettings(string code, int maxPlayers, int totalQuestion, IReadOnlyCollection<Guid> categoryIds)
+    {
+        var game = await _gameRepository.FindByCode(code);
+
+        game.UpdateSettings(s =>
+        {
+            s.ChangeMaxPlayers(maxPlayers);
+            s.ChangeTotalQuestion(totalQuestion);
+            s.SetCategories(categoryIds);
+        });
+
+        await _gameRepository.UpdateAsync(game);
+
+        return await EnrichWithAllCategories(game);
+    }
+
+    private async Task<Game> EnrichWithAllCategories(Game game, IEnumerable<Category>? allCategories = null)
+    {
+        allCategories ??= await _categoryRepository.GetAllAsync();
+        game.InitializeResolvedCategories(allCategories);
+        return game;
     }
 }

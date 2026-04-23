@@ -1,6 +1,7 @@
 ﻿using Application.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using System.Runtime.InteropServices.JavaScript;
 
 namespace Web.Middlewares
 {
@@ -17,6 +18,12 @@ namespace Web.Middlewares
 
         public async Task InvokeAsync(HttpContext context)
         {
+
+            if (context.WebSockets.IsWebSocketRequest)
+            {
+                await _next(context);
+                return;
+            }
             try
             {
                 await _next(context);
