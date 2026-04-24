@@ -98,6 +98,9 @@ public class Game
         CurrentQuestion = Settings.TotalQuestion;
     }
 
+    public bool IsOwner(Guid userId) => 
+        _players.Any(p => p.UserId == userId && p.Role == RoleParty.Owner);
+
     public void UpdateSettings(Action<GameSettings> configure)
     {
         if(Status != GameStatus.Creating)

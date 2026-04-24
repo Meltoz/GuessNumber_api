@@ -40,7 +40,8 @@ public class GameHub : Hub<IGameHubClient>
     [Authorize(Policy = ApiConstants.AuthenticatedUserPolicy)]
     public async Task UpdatePartyAsync(GameVM game)
     {
-        var gameUpdated = await _gameService.UpdateGameSettings(game.Code, game.Configuration.MaxPlayers, game.Configuration.TotalQuestion, game.Configuration.Categories.Select(c => c.Id).ToList());
+        var userId = Guid.Parse(Context.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var gameUpdated = await _gameService.UpdateGameSettings(game.Code, userId, game.Configuration.MaxPlayers, game.Configuration.TotalQuestion, game.Configuration.Categories.Select(c => c.Id).ToList());
 
         await Clients.Group(game.Code).UpdateParty(_mapper.Map<GameVM>(gameUpdated));
     }

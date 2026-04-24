@@ -66,9 +66,11 @@ public class GameService
         return await EnrichWithAllCategories(game);
     }
 
-    public async Task<Game> UpdateGameSettings(string code, int maxPlayers, int totalQuestion, IReadOnlyCollection<Guid> categoryIds)
+    public async Task<Game> UpdateGameSettings(string code, Guid userId, int maxPlayers, int totalQuestion, IReadOnlyCollection<Guid> categoryIds)
     {
         var game = await _gameRepository.FindByCode(code);
+        if(!game.IsOwner(userId))
+            throw new InvalidOperationException($"User '{userId}' is not owner of this game");
 
         game.UpdateSettings(s =>
         {
