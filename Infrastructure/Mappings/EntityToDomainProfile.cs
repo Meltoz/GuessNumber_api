@@ -50,9 +50,10 @@ namespace Infrastructure.Mappings
 
 
             CreateMap<GameEntity, Game>()
+                .ConstructUsing((src, ctx) => new Game(src.Id, src.Code, src.Status, src.Type, src.TotalQuestion, src.MaxPlayers))
                 .ForMember(dest => dest.Players, opt => opt.Ignore())
                 .ForMember(dest => dest.Categories, opt => opt.Ignore())
-                .ForMember(dest => dest.CategoryIds, opt => opt.Ignore())
+                .ForMember(dest => dest.Settings, opt => opt.Ignore())
                 .AfterMap((src, dest, ctx) =>
                 {
                     if (src.Players != null)
@@ -60,7 +61,7 @@ namespace Infrastructure.Mappings
 
                     if (src.Categories != null)
                     {
-                        dest.InitializeCategories(src.Categories.Select(gc => gc.CategoryId));
+                        dest.Settings.InitializeCategories(src.Categories.Select(gc => gc.CategoryId));
 
                         var resolved = src.Categories
                             .Where(gc => gc.Category != null)

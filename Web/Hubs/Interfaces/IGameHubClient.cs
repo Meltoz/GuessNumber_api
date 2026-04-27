@@ -7,5 +7,7 @@ namespace Web.Hubs.Interfaces
         public Task CancelGame();
 
         public Task UpdateParty(GameVM game);
+
+        public Task ReceiveError(string title, string message);
     }
 }

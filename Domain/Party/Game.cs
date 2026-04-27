@@ -14,19 +14,14 @@ public class Game
 
     public GameType Type { get; private set; }
 
-    public int TotalQuestion { get; private set; }
-
     public int CurrentQuestion { get; private set; }
-
-    public int MaxPlayers { get; private set; }
-
+    
+    public GameSettings Settings { get; private set; }
+    
     private readonly List<Player> _players = [];
 
     public IReadOnlyCollection<Player> Players => _players;
-
-    private readonly List<Guid> _categoryIds = [];
-    public IReadOnlyCollection<Guid> CategoryIds => _categoryIds;
-
+    
     private readonly List<Category> _categories = [];
     public IReadOnlyCollection<Category> Categories => _categories;
 
@@ -37,9 +32,8 @@ public class Game
         Code = Code.Create(code);
         Status = status;
         Type = type;
-        ChangeTotalQuestion(maxQuestion);
         CurrentQuestion = 0;
-        ChangeMaxPlayers(maxPlayers);
+        Settings = new GameSettings(maxPlayers, maxQuestion);
     }
 
     public Game(Code code, GameStatus status, GameType type, int maxQuestion, int maxPlayers)
@@ -47,9 +41,8 @@ public class Game
         Code = code;
         Status = status;
         Type = type;
-        ChangeTotalQuestion(maxQuestion);
         CurrentQuestion = 0;
-        ChangeMaxPlayers(maxPlayers);
+        Settings = new GameSettings(maxPlayers, maxQuestion);
     }
 
     public Game(Guid id, string code, GameStatus status, GameType type, int maxQuestion, int maxPlayers) : this(code, status, type, maxQuestion, maxPlayers)
@@ -66,27 +59,11 @@ public class Game
 
     public void NextQuestion()
     {
-        if (CurrentQuestion + 1 > TotalQuestion)
+        if (CurrentQuestion + 1 > Settings.TotalQuestion)
             throw new InvalidOperationException();
 
         CurrentQuestion++;
 
-    }
-
-    public void ChangeTotalQuestion(int totalQuestion)
-    {
-        if(totalQuestion < 0 || totalQuestion > 50)
-            throw new ArgumentOutOfRangeException(nameof(totalQuestion));
-
-        TotalQuestion = totalQuestion;
-    }
-
-    public void ChangeMaxPlayers(int maxPlayers)
-    {
-        if(maxPlayers > 10)
-            throw new ArgumentOutOfRangeException(nameof(maxPlayers));
-
-        MaxPlayers = maxPlayers;
     }
 
     public bool IsJoinable()
@@ -96,12 +73,12 @@ public class Game
             GameStatus.Cancelled,
             GameStatus.Finished,
         };
-        return _players.Count < MaxPlayers && !statusUnjoinable.Contains(Status);
+        return _players.Count < Settings.MaxPlayers && !statusUnjoinable.Contains(Status);
     }
 
     public void AddPlayer(Guid userId, string pseudo, string avatar, string connectionId, RoleParty role = RoleParty.Player)
     {
-        if (_players.Count >= MaxPlayers)
+        if (_players.Count >= Settings.MaxPlayers)
             throw new InvalidOperationException("Maximum number of players exceeded");
 
         _players.Add(new Player(userId, pseudo, avatar, role, connectionId));
@@ -115,38 +92,33 @@ public class Game
         _players.Remove(player);
     }
 
-    public void InitializePlayers(IEnumerable<Player> players)
+    public void CancelGame()
+    {
+        Status = GameStatus.Cancelled;
+        CurrentQuestion = Settings.TotalQuestion;
+    }
+
+    public bool IsOwner(Guid userId) => 
+        _players.Any(p => p.UserId == userId && p.Role == RoleParty.Owner);
+
+    public void UpdateSettings(Action<GameSettings> configure)
+    {
+        if(Status != GameStatus.Creating)
+            throw new InvalidOperationException("Cannot edit settings after game has started.");
+        
+        configure(Settings);
+    }
+    
+    internal void InitializePlayers(IEnumerable<Player> players)
     {
         _players.Clear();
         _players.AddRange(players);
     }
 
-    public void InitializeCategories(IEnumerable<Guid> categoryIds)
-    {
-        _categoryIds.Clear();
-        _categoryIds.AddRange(categoryIds);
-    }
-
-    public void InitializeResolvedCategories(IEnumerable<Category> categories)
+    internal void InitializeResolvedCategories(IEnumerable<Category> categories)
     {
         _categories.Clear();
         _categories.AddRange(categories);
-    }
-
-    public void CancelGame()
-    {
-        Status = GameStatus.Cancelled;
-        CurrentQuestion = TotalQuestion;
-    }
-
-    public void SetCategories(IReadOnlyCollection<Guid> categoryIds)
-    {
-        ArgumentNullException.ThrowIfNull(categoryIds);
-
-        ArgumentEmptyException.ThrowIfEmpty(categoryIds, nameof(categoryIds));
-
-        _categoryIds.Clear();
-        _categoryIds.AddRange(categoryIds);
     }
 }
 

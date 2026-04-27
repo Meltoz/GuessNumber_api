@@ -53,7 +53,15 @@ namespace Web.Mappings
             CreateMap<Category, CategoryVM>();
 
             CreateMap<Game, GameConfigurationVM>()
-                .ForMember(dest => dest.Categories, opt => opt.MapFrom(src => src.Categories));
+                .ForMember(dest => dest.MaxPlayers, opt => opt.MapFrom(src => src.Settings.MaxPlayers))
+                .ForMember(dest => dest.TotalQuestion, opt => opt.MapFrom(src => src.Settings.TotalQuestion))
+                .ForMember(dest => dest.Categories, opt => opt.MapFrom(src =>
+                    src.Categories.Select(c => new CategoryVM
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        IsSelected = src.Settings.CategoryIds.Contains(c.Id)
+                    }).ToList()));
 
             CreateMap<Game, GameVM>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))

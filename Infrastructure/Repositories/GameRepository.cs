@@ -42,9 +42,9 @@ namespace Infrastructure.Repositories
 
             existingEntity.Code = domainToUpdate.Code;
             existingEntity.CurrentQuestion = domainToUpdate.CurrentQuestion;
-            existingEntity.MaxPlayers = domainToUpdate.MaxPlayers;
+            existingEntity.MaxPlayers = domainToUpdate.Settings.MaxPlayers;
             existingEntity.Status = domainToUpdate.Status;
-            existingEntity.TotalQuestion = domainToUpdate.TotalQuestion;
+            existingEntity.TotalQuestion = domainToUpdate.Settings.TotalQuestion;
             existingEntity.Type = domainToUpdate.Type;
 
             var domainPlayerIds = domainToUpdate.Players.Select(p => p.Id).ToHashSet();
