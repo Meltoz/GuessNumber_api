@@ -9,5 +9,7 @@ namespace Web.Hubs.Interfaces
         public Task UpdateParty(GameVM game);
 
         public Task ReceiveError(string title, string message);
+        
+        public Task DetailPlayer(PlayerVM player);
     }
 }

@@ -34,6 +34,7 @@ public class GameHub : Hub<IGameHubClient>
         game = await _gameService.JoinGame(game.Code, user, RoleParty.Owner, Context.ConnectionId);
 
         await Groups.AddToGroupAsync(Context.ConnectionId, game.Code);
+        await Clients.Caller.DetailPlayer( _mapper.Map<PlayerVM>(game.Players.First()));
         await Clients.Group(game.Code).UpdateParty(_mapper.Map<GameVM>(game));
     }
 
@@ -58,6 +59,7 @@ public class GameHub : Hub<IGameHubClient>
 
         
         await Groups.AddToGroupAsync(Context.ConnectionId, game.Code);
+        await Clients.Caller.DetailPlayer(_mapper.Map<PlayerVM>(game.Players.Single(u => user.Id == u.UserId)));
         await Clients.Group(game.Code).UpdateParty(_mapper.Map<GameVM>(game));
     }
 
