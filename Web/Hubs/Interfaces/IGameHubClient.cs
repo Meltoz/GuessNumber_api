@@ -11,5 +11,7 @@ namespace Web.Hubs.Interfaces
         public Task ReceiveError(string title, string message);
         
         public Task DetailPlayer(PlayerVM player);
+
+        public Task ReceiveQuestion(QuestionVM question);
     }
 }

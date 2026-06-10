@@ -25,6 +25,10 @@ public class Game
     private readonly List<Category> _categories = [];
     public IReadOnlyCollection<Category> Categories => _categories;
 
+    private readonly List<Question> _questions = [];
+
+    public  IReadOnlyCollection<Question> Questions => _questions;
+
     private  Game() { }
     
     public Game(string code, GameStatus status, GameType type, int maxQuestion, int maxPlayers)
@@ -108,6 +112,19 @@ public class Game
         
         configure(Settings);
     }
+
+    public void Start(IEnumerable<Question> questions)
+    {
+        if(Status != GameStatus.Creating)
+            throw new InvalidOperationException("Cannot start game after game has started.");
+        
+        if(questions.Count() != Settings.TotalQuestion)
+            throw new InvalidOperationException("The number of questions must match the number of questions");
+
+        Status = GameStatus.Playing;
+        InitializeQuestions(questions);
+
+    }
     
     internal void InitializePlayers(IEnumerable<Player> players)
     {
@@ -119,6 +136,12 @@ public class Game
     {
         _categories.Clear();
         _categories.AddRange(categories);
+    }
+
+    internal void InitializeQuestions(IEnumerable<Question> questions)
+    {
+        _questions.Clear();
+        _questions.AddRange(questions);
     }
 }
 

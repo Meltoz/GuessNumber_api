@@ -1,4 +1,5 @@
-﻿using Application.Interfaces.Repository;
+﻿using Application.Interfaces.Context;
+using Application.Interfaces.Repository;
 using Application.Interfaces.Web;
 using Domain.Enums;
 using Domain.Party;
@@ -11,12 +12,14 @@ public class GameService
     private readonly IGameHubNotifier _hubNotifier;
     private readonly IGameRepository _gameRepository;
     private readonly ICategoryRepository _categoryRepository;
+    private readonly ICurrentGameContext _currentGameContext;
 
-    public GameService(IGameHubNotifier hn, IGameRepository gr, ICategoryRepository cr)
+    public GameService(IGameHubNotifier hn, IGameRepository gr, ICategoryRepository cr, ICurrentGameContext cgc)
     {
         _hubNotifier = hn;
         _gameRepository = gr;
         _categoryRepository = cr;
+        _currentGameContext = cgc;
     }
 
     public async Task<Game> CreateGame()
@@ -66,9 +69,22 @@ public class GameService
         return await EnrichWithAllCategories(game);
     }
 
-    public async Task<Game> UpdateGameSettings(string code, Guid userId, int maxPlayers, int totalQuestion, IReadOnlyCollection<Guid> categoryIds)
+    public async Task<Game> StartGame(string code)
+    {
+        return null;
+    }
+
+    public async Task VerifyAndCacheGame(string code, Guid userId)
     {
         var game = await _gameRepository.FindByCode(code);
+        if (!game.IsOwner(userId))
+            throw new UnauthorizedAccessException($"User '{userId}' is not owner of game '{code}'");
+        _currentGameContext.SetGame(game);
+    }
+
+    public async Task<Game> UpdateGameSettings(string code, Guid userId, int maxPlayers, int totalQuestion, IReadOnlyCollection<Guid> categoryIds)
+    {
+        var game = await GetGameFromContextOrDb(code);
         if(!game.IsOwner(userId))
             throw new InvalidOperationException($"User '{userId}' is not owner of this game");
 
@@ -83,6 +99,9 @@ public class GameService
 
         return await EnrichWithAllCategories(game);
     }
+
+    private async Task<Game> GetGameFromContextOrDb(string code)
+        => _currentGameContext.Game ?? await _gameRepository.FindByCode(code);
 
     private async Task<Game> EnrichWithAllCategories(Game game, IEnumerable<Category>? allCategories = null)
     {

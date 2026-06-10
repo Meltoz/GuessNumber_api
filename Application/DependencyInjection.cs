@@ -1,4 +1,6 @@
-﻿using Application.Services;
+﻿using Application.Context;
+using Application.Interfaces.Context;
+using Application.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Application
@@ -18,6 +20,7 @@ namespace Application
             services.AddScoped<JwtService>();
             services.AddScoped<TokenService>();
             services.AddScoped<GameService>();
+            services.AddScoped<ICurrentGameContext, CurrentGameContext>();
 
 
             return services;

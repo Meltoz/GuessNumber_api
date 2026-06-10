@@ -85,8 +85,13 @@ public class Program
         services.AddApplication();
         services.AddInfrastructure(builder.Configuration, env);
         services.AddAutoMapper(cfg => { }, typeof(ViewModelToDomainProfile), typeof(DomainToViewModelProfile));
-        services.AddSignalR(options => options.AddFilter<HubExceptionFilter>());
+        services.AddSignalR(options =>
+        {
+            options.AddFilter<HubExceptionFilter>();
+            options.AddFilter<GameOwnerFilter>();
+        });
         services.AddScoped<HubExceptionFilter>();
+        services.AddScoped<GameOwnerFilter>();
         services.AddScoped<IGameHubNotifier, GameHubNotifier>();
 
 

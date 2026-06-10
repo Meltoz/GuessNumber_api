@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 using Domain.Enums;
 using Domain.User;
+using Web.Attributes;
 using Web.Constants;
 using Web.Hubs.Interfaces;
 using Web.ViewModels;
@@ -39,6 +40,7 @@ public class GameHub : Hub<IGameHubClient>
     }
 
     [Authorize(Policy = ApiConstants.AuthenticatedUserPolicy)]
+    [RequireOwner(codeParamName: "game")]
     public async Task UpdatePartyAsync(GameVM game)
     {
         var userId = Guid.Parse(Context.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -63,6 +65,13 @@ public class GameHub : Hub<IGameHubClient>
         await Clients.Group(game.Code).UpdateParty(_mapper.Map<GameVM>(game));
     }
 
+    [RequireOwner]
+    public async Task StartGameAsync(string code)
+    {
+        var userId = Guid.Parse(Context.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        
+        
+    }
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var game = await _gameService.LeaveGame(Context.ConnectionId);

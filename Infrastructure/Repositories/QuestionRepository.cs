@@ -34,13 +34,25 @@ namespace Infrastructure.Repositories
             return await GetPaginateAsync(query, skip, take);
         }
 
+        public async Task<Dictionary<Guid, HashSet<Guid>>> GetAllQuestionIds(HashSet<Guid> categoriesIds)
+        {
+            var questions = await GetBaseQuery().AsNoTracking()
+                .Where(q => categoriesIds.Contains(q.CategoryId))
+                .Select(q => new { q.Id, q.CategoryId })
+                .ToHashSetAsync();
+
+            return questions
+                .GroupBy(q => q.CategoryId)
+                .ToDictionary(g => g.Key,
+                    g => g.Select(x => x.Id).ToHashSet());
+        }
         public override async Task<Question?> GetByIdAsync(Guid id)
         {
             var q = await GetBaseQuery().AsNoTracking().SingleOrDefaultAsync(q => q.Id == id);
 
             return _mapper.Map<Question?>(q);
         }
-
+        
         private IQueryable<QuestionEntity> FilterQuestion(IQueryable<QuestionEntity> query, QuestionFilter filterOption)
         {
             if(!string.IsNullOrWhiteSpace(filterOption.Libelle))
