@@ -12,6 +12,8 @@ namespace Web.Hubs.Interfaces
         
         public Task DetailPlayer(PlayerVM player);
 
+        public Task GameStarting(GameVM game);
+
         public Task ReceiveQuestion(QuestionVM question);
     }
 }

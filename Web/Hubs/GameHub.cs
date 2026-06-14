@@ -3,6 +3,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
+using System.Text;
 using Domain.Enums;
 using Domain.User;
 using Web.Attributes;
@@ -69,8 +70,10 @@ public class GameHub : Hub<IGameHubClient>
     public async Task StartGameAsync(string code)
     {
         var userId = Guid.Parse(Context.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        var game = await _gameService.StartGame(code, userId);
         
-        
+        await Clients.Group(game.Code).GameStarting(_mapper.Map<GameVM>(game));
     }
     public override async Task OnDisconnectedAsync(Exception? exception)
     {

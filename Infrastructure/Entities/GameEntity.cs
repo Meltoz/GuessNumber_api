@@ -22,5 +22,7 @@ namespace Infrastructure.Entities
         
         public ICollection<GameCategoriesEntity> Categories { get; set; }
         
+        public ICollection<GameQuestionEntity> Questions { get; set; }
+        
     }
 }

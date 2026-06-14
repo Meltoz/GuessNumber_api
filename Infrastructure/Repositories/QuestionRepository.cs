@@ -22,8 +22,7 @@ namespace Infrastructure.Repositories
 
         public async Task<PagedResult<Question>> SearchQuestion(int skip, int take, QuestionFilter filterOption)
         {
-            var query = _dbSet
-                .Include(q => q.Category)
+            var query = GetBaseQuery()
                 .AsNoTracking()
                 .AsQueryable();
 
@@ -46,11 +45,22 @@ namespace Infrastructure.Repositories
                 .ToDictionary(g => g.Key,
                     g => g.Select(x => x.Id).ToHashSet());
         }
+        
         public override async Task<Question?> GetByIdAsync(Guid id)
         {
             var q = await GetBaseQuery().AsNoTracking().SingleOrDefaultAsync(q => q.Id == id);
 
             return _mapper.Map<Question?>(q);
+        }
+
+        public async Task<IEnumerable<Question>> GetQuestionsByIds(IEnumerable<Guid> questionIds)
+        {
+            var q = await _dbSet
+                .AsNoTracking()
+                .Where(q => questionIds.Contains(q.Id))
+                .ToListAsync();
+            
+            return _mapper.Map<IEnumerable<Question>>(q);
         }
         
         private IQueryable<QuestionEntity> FilterQuestion(IQueryable<QuestionEntity> query, QuestionFilter filterOption)
