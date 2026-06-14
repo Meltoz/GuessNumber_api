@@ -45,6 +45,7 @@ namespace Infrastructure.Mappings
             
             CreateMap<Game, GameEntity>()
                 .ForMember(dest => dest.Players, opt => opt.Ignore())
+                .ForMember(dest => dest.Questions, opt => opt.Ignore())
                 .ForMember(dest => dest.TotalQuestion, opt => opt.MapFrom(src => src.Settings.TotalQuestion))
                 .ForMember(dest => dest.MaxPlayers, opt => opt.MapFrom(src => src.Settings.MaxPlayers))
                 .ForMember(dest => dest.Categories, opt => opt.MapFrom(src =>

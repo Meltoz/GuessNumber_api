@@ -53,6 +53,7 @@ namespace Infrastructure.Mappings
                 .ConstructUsing((src, ctx) => new Game(src.Id, src.Code, src.Status, src.Type, src.TotalQuestion, src.MaxPlayers))
                 .ForMember(dest => dest.Players, opt => opt.Ignore())
                 .ForMember(dest => dest.Categories, opt => opt.Ignore())
+                .ForMember(dest => dest.Questions, opt => opt.Ignore())
                 .ForMember(dest => dest.Settings, opt => opt.Ignore())
                 .AfterMap((src, dest, ctx) =>
                 {
@@ -67,6 +68,16 @@ namespace Infrastructure.Mappings
                             .Where(gc => gc.Category != null)
                             .Select(gc => ctx.Mapper.Map<Category>(gc.Category));
                         dest.InitializeResolvedCategories(resolved);
+                    }
+                    
+                    if (src.Questions != null)
+                    {
+                        var ordered = src.Questions
+                            .OrderBy(gq => gq.Order)
+                            .Where(gq => gq.Question != null)
+                            .Select(gq => ctx.Mapper.Map<Question>(gq.Question))
+                            .ToList();
+                        dest.InitializeQuestions(ordered);
                     }
                 });
         }

@@ -123,6 +123,21 @@ namespace Infrastructure
                     .HasForeignKey(gc => gc.CategoryId);
                 
             });
+
+            modelBuilder.Entity<GameQuestionEntity>(entity =>
+            {
+                entity.ToTable("GameQuestions");
+
+                entity.HasKey(q => new { q.GameId, q.QuestionId });
+
+                entity.HasOne(q => q.Game)
+                    .WithMany(g => g.Questions)
+                    .HasForeignKey(gq => gq.GameId);
+
+                entity.HasOne(q => q.Question)
+                    .WithMany()
+                    .HasForeignKey(q => q.QuestionId);
+            });
             
             if (_encryptionService is not null)
             {
@@ -134,7 +149,6 @@ namespace Infrastructure
                     .HasConversion(tokenConverter);
                 });
             }
-
         }
 
         public override int SaveChanges()

@@ -14,6 +14,7 @@ namespace Infrastructure.Repositories
             var game = await _dbSet
                 .Include(g => g.Players)
                 .Include(g => g.Categories).ThenInclude(gc => gc.Category)
+                .Include(g => g.Questions).ThenInclude(gc => gc.Question)
                 .Where(g => g.Code.ToLower() == code.ToLower())
                 .SingleOrDefaultAsync();
 
@@ -25,6 +26,7 @@ namespace Infrastructure.Repositories
             var game = await _dbSet
                 .Include(g => g.Players)
                 .Include(g => g.Categories).ThenInclude(gc => gc.Category)
+                .Include(g => g.Questions).ThenInclude(gc => gc.Question)
                 .Where(g => g.Players.Any(p => p.ConnectionId == connectionId))
                 .SingleOrDefaultAsync();
 
@@ -79,12 +81,37 @@ namespace Infrastructure.Repositories
                 existing.ConnectionId = player.ConnectionId;
             }
 
+            await _context.Entry(existingEntity).Collection(g => g.Questions).LoadAsync();
+
+            var domainQuestions = domainToUpdate.Questions.ToList();
+            var domainQuestionIds = domainQuestions.Select(q => q.Id).ToHashSet();
+            var existingQuestionIds = existingEntity.Questions.Select(q => q.QuestionId).ToHashSet();
+
+            foreach (var q in existingEntity.Questions.Where(q => !domainQuestionIds.Contains(q.QuestionId)).ToList())
+                _context.Remove(q);
+
+            for (var i = 0; i < domainQuestions.Count; i++)
+            {
+                if (!existingQuestionIds.Contains(domainQuestions[i].Id))
+                    existingEntity.Questions.Add(new GameQuestionEntity
+                    {
+                        GameId = existingEntity.Id,
+                        QuestionId = domainQuestions[i].Id,
+                        Order = i + 1
+                    });
+            }
+
             await SaveAsync();
 
             await _context.Entry(existingEntity)
                 .Collection(g => g.Players)
                 .LoadAsync();
 
+            await _context.Entry(existingEntity)
+                .Collection(g => g.Questions)
+                .Query()
+                .Include(gq => gq.Question)
+                .LoadAsync();
             return _mapper.Map<Game>(existingEntity);
         }
     }

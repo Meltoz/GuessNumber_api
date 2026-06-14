@@ -67,6 +67,11 @@ namespace Web.Mappings
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.Configuration, opt => opt.MapFrom(src => src))
                 .ForMember(dest => dest.Players, opt => opt.MapFrom(src => src.Players));
+
+            CreateMap<Question, QuestionVM>()
+                .ForMember(dest => dest.Duration, opt => opt.MapFrom(src => 15));
+
+
         }
     }
 }
