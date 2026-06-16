@@ -11,6 +11,8 @@ public class Game
     public Code Code { get; private set; }
 
     public GameStatus Status { get; private set; }
+    
+    public GamePhase Phase { get; private set; }
 
     public GameType Type { get; private set; }
 
@@ -65,9 +67,32 @@ public class Game
     {
         if (CurrentQuestion + 1 > Settings.TotalQuestion)
             throw new InvalidOperationException();
-
+        
         CurrentQuestion++;
+    }
 
+    public void SetReviewPhase()
+    {
+        if (Status != GameStatus.Playing)
+            throw new InvalidOperationException("Cannot pause game when not playing");
+
+        Phase = GamePhase.Reviewing;
+    }
+
+    public void SetAnswerPhase()
+    {
+        if (Status != GameStatus.Playing)
+            throw new InvalidOperationException("Cannot set answer phase when not playing");
+        
+        Phase = GamePhase.Answering;
+    }
+
+    public void SetWaitingNextRoundPhase()
+    {
+        if (Status != GameStatus.Playing)
+            throw new InvalidOperationException("Cannot set waiting round phase when not playing");
+
+        Phase = GamePhase.TransitionToNext;
     }
 
     public bool IsJoinable()

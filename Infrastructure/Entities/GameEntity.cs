@@ -11,6 +11,8 @@ namespace Infrastructure.Entities
         public GameStatus Status { get; set; }
         
         public GameType Type { get; set; }
+        
+        public GamePhase? Phase { get; set; }
 
         public int CurrentQuestion { get; set; }
 
