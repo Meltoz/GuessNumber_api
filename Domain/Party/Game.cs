@@ -6,6 +6,8 @@ namespace Domain.Party;
 
 public class Game
 {
+    private const int CountDownDuration = 3;
+    private const int AnsweringDuration = 15;
     public Guid Id { get; private set; }
 
     public Code Code { get; private set; }
@@ -20,6 +22,10 @@ public class Game
     
     public GameSettings Settings { get; private set; }
     
+    public DateTime? PhaseStartedAt { get; private set; }
+    
+    public DateTime? PhaseEndedAt { get; private set; }
+    
     private readonly List<Player> _players = [];
 
     public IReadOnlyCollection<Player> Players => _players;
@@ -31,7 +37,7 @@ public class Game
 
     public  IReadOnlyCollection<Question> Questions => _questions;
 
-    private  Game() { }
+    private Game() { }
     
     public Game(string code, GameStatus status, GameType type, int maxQuestion, int maxPlayers)
     {
@@ -77,6 +83,7 @@ public class Game
             throw new InvalidOperationException("Cannot pause game when not playing");
 
         Phase = GamePhase.Reviewing;
+        ResetTimePhase();
     }
 
     public void SetAnswerPhase()
@@ -85,14 +92,7 @@ public class Game
             throw new InvalidOperationException("Cannot set answer phase when not playing");
         
         Phase = GamePhase.Answering;
-    }
-
-    public void SetWaitingNextRoundPhase()
-    {
-        if (Status != GameStatus.Playing)
-            throw new InvalidOperationException("Cannot set waiting round phase when not playing");
-
-        Phase = GamePhase.TransitionToNext;
+        SetTimePhase(TimeSpan.FromSeconds(CountDownDuration),  TimeSpan.FromSeconds(AnsweringDuration));
     }
 
     public bool IsJoinable()
@@ -147,9 +147,11 @@ public class Game
             throw new InvalidOperationException("The number of questions must match the number of questions");
 
         Status = GameStatus.Playing;
+        SetAnswerPhase();
         InitializeQuestions(questions);
-
     }
+
+
     
     internal void InitializePlayers(IEnumerable<Player> players)
     {
@@ -167,6 +169,22 @@ public class Game
     {
         _questions.Clear();
         _questions.AddRange(questions);
+    }
+    
+    private void SetTimePhase(TimeSpan beforeStart, TimeSpan? beforeEnd)
+    {
+        var now = DateTime.UtcNow;
+        PhaseStartedAt = now + beforeStart;
+        if (beforeEnd.HasValue && beforeEnd.Value <= TimeSpan.Zero)
+            throw new ArgumentException("beforeEnd must be positive");
+        if (beforeEnd.HasValue)
+            PhaseEndedAt = PhaseStartedAt + beforeEnd.Value;
+    }
+
+    private void ResetTimePhase()
+    {
+        PhaseStartedAt = null;
+        PhaseEndedAt = null;
     }
 }
 
