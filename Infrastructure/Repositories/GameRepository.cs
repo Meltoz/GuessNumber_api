@@ -48,6 +48,9 @@ namespace Infrastructure.Repositories
             existingEntity.Status = domainToUpdate.Status;
             existingEntity.TotalQuestion = domainToUpdate.Settings.TotalQuestion;
             existingEntity.Type = domainToUpdate.Type;
+            existingEntity.Phase = domainToUpdate.Phase;
+            existingEntity.PhaseStartedAt = domainToUpdate.PhaseStartedAt;
+            existingEntity.PhaseEndedAt = domainToUpdate.PhaseEndedAt;
 
             var domainPlayerIds = domainToUpdate.Players.Select(p => p.Id).ToHashSet();
             var existingPlayerIds = existingEntity.Players.Select(p => p.Id).ToHashSet();

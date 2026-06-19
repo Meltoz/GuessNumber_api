@@ -9,6 +9,12 @@ public class GameVM
     public int Status { get; set; }
 
     public int CurrentQuestion { get; set; }
+    
+    public int Phase { get; set; }
+    
+    public DateTime? PhaseStartedAt { get; set; }
+    
+    public DateTime? PhaseEndedAt { get; set; }
 
     public GameConfigurationVM Configuration { get; set; }
 
