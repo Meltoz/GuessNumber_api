@@ -74,6 +74,10 @@ public class GameHub : Hub<IGameHubClient>
         var game = await _gameService.StartGame(code, userId);
         
         await Clients.Group(game.Code).UpdateParty(_mapper.Map<GameVM>(game));
+        
+        //Question
+        var questionResult = await _gameService.GetNextQuestion(code, userId);
+        await Clients.Group(game.Code).ReceiveQuestion(_mapper.Map<QuestionVM>(questionResult.Question));
     }
     public override async Task OnDisconnectedAsync(Exception? exception)
     {

@@ -1,6 +1,7 @@
 ﻿using Application.Interfaces.Context;
 using Application.Interfaces.Repository;
 using Application.Interfaces.Web;
+using Application.Results;
 using Domain.Enums;
 using Domain.Party;
 using Domain.User;
@@ -109,6 +110,20 @@ public class GameService
         return game;
     }
 
+    public async Task<NextQuestionResult> GetNextQuestion(string code, Guid userIdCaller)
+    {
+        var game = await VerifyAndCacheGame(code, userIdCaller);
+        if (game.IsLastQuestion)
+        {
+            // TODO : Update end Game
+            return NextQuestionResult.GameOver();
+        }
+        game.NextQuestion();
+        await _gameRepository.UpdateAsync(game);
+        var question = game.Questions.ElementAt(game.CurrentQuestion -1);
+        return NextQuestionResult.WithQuestion(question);
+    }
+    
     /// <summary>
     /// Mettre à jour les informations de la partie
     /// </summary>
@@ -134,6 +149,7 @@ public class GameService
         return await EnrichWithAllCategories(game);
     }
 
+    #region Private Methods
     /// <summary>
     /// Permet de récupérer la game via le cache backend
     /// </summary>
@@ -200,4 +216,6 @@ public class GameService
 
         return result;
     }
+    
+    #endregion
 }
