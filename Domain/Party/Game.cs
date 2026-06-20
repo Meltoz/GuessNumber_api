@@ -36,6 +36,9 @@ public class Game
     private readonly List<Question> _questions = [];
 
     public  IReadOnlyCollection<Question> Questions => _questions;
+    
+    
+    public bool IsLastQuestion => CurrentQuestion >= Settings.TotalQuestion - 1;
 
     private Game() { }
     
@@ -61,8 +64,7 @@ public class Game
     {
         if(id != Guid.Empty) Id = id;
     }
-
-
+    
     public static Game CreateNew()
     {
         var code = Code.Generate();
