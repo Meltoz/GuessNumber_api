@@ -8,6 +8,8 @@ public class GameSettings
     
     public int TotalQuestion { get; private set; }
     
+    public bool HasReview { get; private set; }
+    
     private readonly List<Guid> _categoryIds = [];
     public IReadOnlyCollection<Guid> CategoryIds => _categoryIds;
     
@@ -26,6 +28,11 @@ public class GameSettings
             throw new ArgumentOutOfRangeException(nameof(maxPlayers));
 
         MaxPlayers = maxPlayers;
+    }
+
+    public void ChangeGameMode(bool hasReviewMode)
+    {
+        HasReview = hasReviewMode;
     }
     
     public void SetCategories(IReadOnlyCollection<Guid> categoryIds)
@@ -47,10 +54,11 @@ public class GameSettings
 
     private GameSettings() { }
 
-    internal GameSettings(int maxPlayers, int totalQuestion)
+    internal GameSettings(int maxPlayers, int totalQuestion, bool hasReview)
     {
         ChangeMaxPlayers(maxPlayers);
         ChangeTotalQuestion(totalQuestion);
+        ChangeGameMode(hasReview);
     }
         
 }

@@ -49,8 +49,11 @@ namespace Infrastructure.Mappings
                 .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.Avatar));
 
 
+            CreateMap<AnswerEntity, Answer>()
+                .ForMember(dest => dest.ResponseUser, opt => opt.MapFrom(src => src.UserResponse));
+
             CreateMap<GameEntity, Game>()
-                .ConstructUsing((src, ctx) => new Game(src.Id, src.Code, src.Status, src.Type, src.TotalQuestion, src.MaxPlayers))
+                .ConstructUsing((src, ctx) => new Game(src.Id, src.Code, src.Status, src.Type, src.TotalQuestion, src.MaxPlayers, src.HasReview))
                 .ForMember(dest => dest.Players, opt => opt.Ignore())
                 .ForMember(dest => dest.Categories, opt => opt.Ignore())
                 .ForMember(dest => dest.Questions, opt => opt.Ignore())

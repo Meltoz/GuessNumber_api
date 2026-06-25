@@ -38,29 +38,31 @@ public class Game
     public  IReadOnlyCollection<Question> Questions => _questions;
     
     
-    public bool IsLastQuestion => CurrentQuestion >= Settings.TotalQuestion - 1;
+    public bool IsLastQuestion => CurrentQuestion >= Settings.TotalQuestion;
+    
+    public bool HasReviewPhase => Settings.HasReview;
 
     private Game() { }
     
-    public Game(string code, GameStatus status, GameType type, int maxQuestion, int maxPlayers)
+    public Game(string code, GameStatus status, GameType type, int maxQuestion, int maxPlayers, bool hasReview)
     {
         Code = Code.Create(code);
         Status = status;
         Type = type;
         CurrentQuestion = 0;
-        Settings = new GameSettings(maxPlayers, maxQuestion);
+        Settings = new GameSettings(maxPlayers, maxQuestion, hasReview);
     }
 
-    public Game(Code code, GameStatus status, GameType type, int maxQuestion, int maxPlayers)
+    public Game(Code code, GameStatus status, GameType type, int maxQuestion, int maxPlayers, bool hasReview)
     {
         Code = code;
         Status = status;
         Type = type;
         CurrentQuestion = 0;
-        Settings = new GameSettings(maxPlayers, maxQuestion);
+        Settings = new GameSettings(maxPlayers, maxQuestion, hasReview);
     }
 
-    public Game(Guid id, string code, GameStatus status, GameType type, int maxQuestion, int maxPlayers) : this(code, status, type, maxQuestion, maxPlayers)
+    public Game(Guid id, string code, GameStatus status, GameType type, int maxQuestion, int maxPlayers, bool hasReview) : this(code, status, type, maxQuestion, maxPlayers, hasReview)
     {
         if(id != Guid.Empty) Id = id;
     }
@@ -68,12 +70,12 @@ public class Game
     public static Game CreateNew()
     {
         var code = Code.Generate();
-        return new Game(code, GameStatus.Creating, GameType.Private, 20, 8);
+        return new Game(code, GameStatus.Creating, GameType.Private, 20, 8, true);
     }
 
     public void NextQuestion()
     {
-        if (CurrentQuestion + 1 > Settings.TotalQuestion)
+        if (CurrentQuestion + 1 >= Settings.TotalQuestion)
             throw new InvalidOperationException();
         
         CurrentQuestion++;
@@ -123,6 +125,18 @@ public class Game
         _players.Remove(player);
     }
 
+    public Player FindPlayer(string connectionId)
+    {
+        if (_players is null || _players.Count == 0)
+            throw new ArgumentEmptyException("Players is empty");
+        
+        var player = _players.FirstOrDefault(p => p.ConnectionId == connectionId);
+        if(player is null)
+            throw new InvalidOperationException("Player not found");
+        return player;
+
+    }
+    
     public void CancelGame()
     {
         Status = GameStatus.Cancelled;
@@ -149,7 +163,6 @@ public class Game
             throw new InvalidOperationException("The number of questions must match the number of questions");
 
         Status = GameStatus.Playing;
-        SetAnswerPhase();
         InitializeQuestions(questions);
     }
 

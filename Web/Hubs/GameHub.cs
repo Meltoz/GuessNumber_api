@@ -1,11 +1,10 @@
-﻿using Application.Services;
+﻿using System.Security.Claims;
+using Application.Services;
 using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
-using System.Security.Claims;
-using System.Text;
 using Domain.Enums;
 using Domain.User;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using Web.Attributes;
 using Web.Constants;
 using Web.Hubs.Interfaces;
@@ -45,7 +44,7 @@ public class GameHub : Hub<IGameHubClient>
     public async Task UpdatePartyAsync(GameVM game)
     {
         var userId = Guid.Parse(Context.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var gameUpdated = await _gameService.UpdateGameSettings(game.Code, userId, game.Configuration.MaxPlayers, game.Configuration.TotalQuestion, game.Configuration.Categories.Select(c => c.Id).ToList());
+        var gameUpdated = await _gameService.UpdateGameSettings(game.Code, userId, game.Configuration.MaxPlayers, game.Configuration.TotalQuestion, game.Configuration.HasReview, game.Configuration.Categories.Select(c => c.Id).ToList());
 
         await Clients.Group(game.Code).UpdateParty(_mapper.Map<GameVM>(gameUpdated));
     }
@@ -76,9 +75,16 @@ public class GameHub : Hub<IGameHubClient>
         await Clients.Group(game.Code).UpdateParty(_mapper.Map<GameVM>(game));
         
         //Question
-        var questionResult = await _gameService.GetNextQuestion(code, userId);
-        await Clients.Group(game.Code).ReceiveQuestion(_mapper.Map<QuestionVM>(questionResult.Question));
+        await _gameService.LaunchFirstQuestion(game.Code);
     }
+
+    public async Task UserRespond(string code, string response)
+    {
+        // TODO : Accept Response only on phase answering + with PhaseStart > DateTime.UtcNow;
+        // TODO :  seule réponse par joueur
+        await _gameService.UserResponse(code, response, Context.ConnectionId);
+    }
+    
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var game = await _gameService.LeaveGame(Context.ConnectionId);

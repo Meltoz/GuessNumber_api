@@ -9,6 +9,8 @@ namespace Application
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
+
+            services.AddSingleton<GameTimerService>();
             services.AddScoped<ActualityService>();
             services.AddScoped<CommunicationService>();
             services.AddScoped<ReportService>();
@@ -21,7 +23,6 @@ namespace Application
             services.AddScoped<TokenService>();
             services.AddScoped<GameService>();
             services.AddScoped<ICurrentGameContext, CurrentGameContext>();
-
 
             return services;
         }
