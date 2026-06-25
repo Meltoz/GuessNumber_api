@@ -55,6 +55,7 @@ namespace Web.Mappings
             CreateMap<Game, GameConfigurationVM>()
                 .ForMember(dest => dest.MaxPlayers, opt => opt.MapFrom(src => src.Settings.MaxPlayers))
                 .ForMember(dest => dest.TotalQuestion, opt => opt.MapFrom(src => src.Settings.TotalQuestion))
+                .ForMember(dest => dest.HasReview, opt => opt.MapFrom(src => src.Settings.HasReview))
                 .ForMember(dest => dest.Categories, opt => opt.MapFrom(src =>
                     src.Categories.Select(c => new CategoryVM
                     {

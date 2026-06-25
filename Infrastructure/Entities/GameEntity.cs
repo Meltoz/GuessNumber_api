@@ -20,9 +20,12 @@ namespace Infrastructure.Entities
 
         public int MaxPlayers { get; set; }
         
+        public bool HasReview { get; set; }
+        
         public DateTime? PhaseStartedAt { get; set; }
         
         public DateTime? PhaseEndedAt { get; set; }
+        
         public ICollection<PlayerEntity> Players { get; set; }
         
         public ICollection<GameCategoriesEntity> Categories { get; set; }

@@ -3,6 +3,7 @@ using Infrastructure.Converters;
 using Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
+using Domain.Party;
 
 namespace Infrastructure
 {
@@ -137,6 +138,26 @@ namespace Infrastructure
                 entity.HasOne(q => q.Question)
                     .WithMany()
                     .HasForeignKey(q => q.QuestionId);
+            });
+
+            modelBuilder.Entity<AnswerEntity>(entity =>
+            {
+                entity.ToTable("Answers");
+                
+                entity.HasOne(a => a.Player)
+                    .WithMany()
+                    .HasForeignKey(a => a.PlayerId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(a => a.Game)
+                    .WithMany()
+                    .HasForeignKey(a => a.GameId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                
+                entity.HasOne(a => a.Question)
+                    .WithMany()
+                    .HasForeignKey(a => a.QuestionId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
             
             if (_encryptionService is not null)

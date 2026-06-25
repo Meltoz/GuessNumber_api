@@ -1,4 +1,5 @@
-﻿using Application.Interfaces.Context;
+﻿using System.Text.RegularExpressions;
+using Application.Interfaces.Context;
 using Application.Interfaces.Repository;
 using Application.Interfaces.Web;
 using Application.Results;
@@ -14,14 +15,24 @@ public class GameService
     private readonly IGameRepository _gameRepository;
     private readonly ICategoryRepository _categoryRepository;
     private readonly IQuestionRepository _questionRepository;
+    private readonly IAnswerRepository _answerRepository;
     private readonly ICurrentGameContext _currentGameContext;
+    private readonly GameTimerService _gameTimerService;
 
-    public GameService(IGameHubNotifier hn, IGameRepository gr, ICategoryRepository cr, IQuestionRepository qr,  ICurrentGameContext cgc)
+    public GameService(IGameHubNotifier hn, 
+        IGameRepository gr, 
+        GameTimerService timerService,
+        ICategoryRepository cr, 
+        IQuestionRepository qr,
+        IAnswerRepository ar,
+        ICurrentGameContext cgc)
     {
         _hubNotifier = hn;
         _gameRepository = gr;
+        _gameTimerService = timerService;
         _categoryRepository = cr;
         _questionRepository = qr;
+        _answerRepository = ar;
         _currentGameContext = cgc;
     }
 
@@ -59,6 +70,7 @@ public class GameService
 
     public async Task<Game?> LeaveGame(string connectionId)
     {
+        // TODO : Remove for gameTimerService
         var game = await _gameRepository.FindByConnectionId(connectionId);
         if (game is null)
             return null;
@@ -93,6 +105,32 @@ public class GameService
         return game;
     }
 
+
+    public async Task LaunchFirstQuestion(string code)
+    {
+        var game = await GetGameFromContextOrDb(code);
+        var (_, question) = await AdvanceToNextQuestionInternal(game);
+        
+        await _hubNotifier.NotifyGameUpdate(game);
+        await _hubNotifier.NotifyNextQuestion(game.Code, question!);
+        _gameTimerService.StartRound(game);
+    
+    }
+
+    public async Task UserResponse(string code, string response, string connectionId)
+    {
+        var game = await GetGameFromContextOrDb(code);
+        var player = game.FindPlayer(connectionId);
+
+        string? responseConverted = null;
+        if (Regex.IsMatch(response, @"^\d+$"))
+            responseConverted = response;
+        
+        var index = game.CurrentQuestion;
+        var question = game.Questions.ElementAt(index - 1);
+        await _answerRepository.InsertAsync(new Answer(game, player, question, index, responseConverted));
+        await _gameTimerService.RecordAnswer(code, player.Id, responseConverted);
+    }
     /// <summary>
     /// Récuperation de la partie via BDD + vérification action owner
     /// </summary>
@@ -110,20 +148,12 @@ public class GameService
         return game;
     }
 
-    public async Task<NextQuestionResult> GetNextQuestion(string code, Guid userIdCaller)
+    public async Task GetNextQuestion(string code, Guid userIdCaller)
     {
-        var game = await VerifyAndCacheGame(code, userIdCaller);
-        if (game.IsLastQuestion)
-        {
-            // TODO : Update end Game
-            return NextQuestionResult.GameOver();
-        }
-        game.NextQuestion();
-        await _gameRepository.UpdateAsync(game);
-        var question = game.Questions.ElementAt(game.CurrentQuestion -1);
-        return NextQuestionResult.WithQuestion(question);
+        await VerifyAndCacheGame(code, userIdCaller);
+        await AdvancePhaseAsync(code);
     }
-    
+
     /// <summary>
     /// Mettre à jour les informations de la partie
     /// </summary>
@@ -131,9 +161,10 @@ public class GameService
     /// <param name="userId">ID du user qui fait la demande de mise a jour</param>
     /// <param name="maxPlayers">Nombre maximum de joueurs de la partie</param>
     /// <param name="totalQuestion">Nombre totale de question</param>
+    /// <param name="hasReview"></param>
     /// <param name="categoryIds">Liste des categories de la partie</param>
     /// <returns></returns>
-    public async Task<Game> UpdateGameSettings(string code, Guid userId, int maxPlayers, int totalQuestion, IReadOnlyCollection<Guid> categoryIds)
+    public async Task<Game> UpdateGameSettings(string code, Guid userId, int maxPlayers, int totalQuestion, bool hasReview, IReadOnlyCollection<Guid> categoryIds)
     {
         var game = await VerifyAndCacheGame(code, userId);
 
@@ -141,6 +172,7 @@ public class GameService
         {
             s.ChangeMaxPlayers(maxPlayers);
             s.ChangeTotalQuestion(totalQuestion);
+            s.ChangeGameMode(hasReview);
             s.SetCategories(categoryIds);
         });
 
@@ -149,6 +181,35 @@ public class GameService
         return await EnrichWithAllCategories(game);
     }
 
+    public async Task AdvancePhaseAsync(string code)
+    {
+        var game = await GetGameFromContextOrDb(code);
+        if (game.HasReviewPhase && game.Phase == GamePhase.Answering)
+        {
+            game.SetReviewPhase();
+            await _gameRepository.UpdateAsync(game);
+            // TODO : Send answer + analytics
+            
+            await _hubNotifier.NotifyGameUpdate(game);
+        }
+        else
+        {
+            var result = await AdvanceToNextQuestionInternal(game);
+            if (result.IsGameOver)
+            {
+                // TODO : FINIR la partie
+                await _hubNotifier.NotifyGameEnd(game.Code);
+            }
+            else
+            {
+                var question = result.Question;
+                await _hubNotifier.NotifyGameUpdate(game);
+                await _hubNotifier.NotifyNextQuestion(game.Code, question!);
+                _gameTimerService.StartRound(game);
+            }
+        }
+    }
+    
     #region Private Methods
     /// <summary>
     /// Permet de récupérer la game via le cache backend
@@ -216,6 +277,21 @@ public class GameService
 
         return result;
     }
-    
+
+    /// <summary>
+    /// Permet d'avancer d'une question lors du courant de la partie
+    /// </summary>
+    /// <param name="game"></param>
+    /// <returns></returns>
+    private async Task<NextQuestionResult> AdvanceToNextQuestionInternal(Game game)
+    {
+        if (game.IsLastQuestion)
+            return NextQuestionResult.GameOver();
+        game.NextQuestion();
+        game.SetAnswerPhase();
+        await _gameRepository.UpdateAsync(game);
+        var question = game.Questions.ElementAt(game.CurrentQuestion -1);
+        return NextQuestionResult.WithQuestion(question);
+    }
     #endregion
 }

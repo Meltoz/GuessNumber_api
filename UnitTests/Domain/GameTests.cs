@@ -44,7 +44,7 @@ namespace UnitTests.Domain
             var code = "ABCDEFGHIJ";
 
             // Act
-            var game = new Game(code, GameStatus.Creating, GameType.Private, 10, 4);
+            var game = new Game(code, GameStatus.Creating, GameType.Private, 10, 4, true);
 
             // Assert
             Assert.Equal(code, game.Code.Value);
@@ -62,7 +62,7 @@ namespace UnitTests.Domain
             var id = Guid.NewGuid();
 
             // Act
-            var game = new Game(id, "ABCDEFGHIJ", GameStatus.Playing, GameType.Public, 15, 6);
+            var game = new Game(id, "ABCDEFGHIJ", GameStatus.Playing, GameType.Public, 15, 6, true);
 
             // Assert
             Assert.Equal(id, game.Id);
@@ -72,7 +72,7 @@ namespace UnitTests.Domain
         public void Constructor_WithEmptyId_ShouldKeepEmptyId()
         {
             // Act
-            var game = new Game(Guid.Empty, "ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 4);
+            var game = new Game(Guid.Empty, "ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 4, true);
 
             // Assert
             Assert.Equal(Guid.Empty, game.Id);
@@ -86,7 +86,7 @@ namespace UnitTests.Domain
         public void NextQuestion_ShouldIncrementCurrentQuestion()
         {
             // Arrange
-            var game = new Game("ABCDEFGHIJ", GameStatus.Playing, GameType.Private, 10, 4);
+            var game = new Game("ABCDEFGHIJ", GameStatus.Playing, GameType.Private, 10, 4, true);
 
             // Act
             game.NextQuestion();
@@ -99,7 +99,7 @@ namespace UnitTests.Domain
         public void NextQuestion_AtLastQuestion_ShouldReachTotal()
         {
             // Arrange
-            var game = new Game("ABCDEFGHIJ", GameStatus.Playing, GameType.Private, 2, 4);
+            var game = new Game("ABCDEFGHIJ", GameStatus.Playing, GameType.Private, 2, 4, true);
             game.NextQuestion();
 
             // Act
@@ -117,7 +117,7 @@ namespace UnitTests.Domain
         public void NextQuestion_WhenExceedsTotalQuestion_ShouldThrowInvalidOperationException()
         {
             // Arrange
-            var game = new Game("ABCDEFGHIJ", GameStatus.Playing, GameType.Private, 1, 4);
+            var game = new Game("ABCDEFGHIJ", GameStatus.Playing, GameType.Private, 1, 4, true);
             game.NextQuestion();
 
             // Act & Assert
@@ -249,7 +249,7 @@ namespace UnitTests.Domain
         public void UpdateSettings_WhenGameIsPlaying_ShouldThrowInvalidOperationException()
         {
             // Arrange
-            var game = new Game("ABCDEFGHIJ", GameStatus.Playing, GameType.Private, 10, 4);
+            var game = new Game("ABCDEFGHIJ", GameStatus.Playing, GameType.Private, 10, 4, true);
 
             // Act & Assert
             Assert.Throws<InvalidOperationException>(() => game.UpdateSettings(s => s.ChangeMaxPlayers(6)));
@@ -259,7 +259,7 @@ namespace UnitTests.Domain
         public void UpdateSettings_WhenGameIsFinished_ShouldThrowInvalidOperationException()
         {
             // Arrange
-            var game = new Game("ABCDEFGHIJ", GameStatus.Finished, GameType.Private, 10, 4);
+            var game = new Game("ABCDEFGHIJ", GameStatus.Finished, GameType.Private, 10, 4, true);
 
             // Act & Assert
             Assert.Throws<InvalidOperationException>(() => game.UpdateSettings(s => s.ChangeMaxPlayers(6)));
@@ -269,7 +269,7 @@ namespace UnitTests.Domain
         public void UpdateSettings_WhenGameIsCancelled_ShouldThrowInvalidOperationException()
         {
             // Arrange
-            var game = new Game("ABCDEFGHIJ", GameStatus.Cancelled, GameType.Private, 10, 4);
+            var game = new Game("ABCDEFGHIJ", GameStatus.Cancelled, GameType.Private, 10, 4, true);
 
             // Act & Assert
             Assert.Throws<InvalidOperationException>(() => game.UpdateSettings(s => s.ChangeMaxPlayers(6)));
@@ -293,7 +293,7 @@ namespace UnitTests.Domain
         public void IsJoinable_WhenFull_ShouldReturnFalse()
         {
             // Arrange
-            var game = new Game("ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 2);
+            var game = new Game("ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 2, true);
             game.AddPlayer(Guid.NewGuid(), "User1", "avatar.png", "conn-1");
             game.AddPlayer(Guid.NewGuid(), "User2", "avatar.png", "conn-2");
 
@@ -305,7 +305,7 @@ namespace UnitTests.Domain
         public void IsJoinable_WhenBelowMax_ShouldReturnTrue()
         {
             // Arrange
-            var game = new Game("ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 4);
+            var game = new Game("ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 4, true);
             game.AddPlayer(Guid.NewGuid(), "User1", "avatar.png", "conn-1");
 
             // Act & Assert
@@ -378,7 +378,7 @@ namespace UnitTests.Domain
         public void AddPlayer_MultipleTimesUpToMax_ShouldSucceed()
         {
             // Arrange
-            var game = new Game("ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 3);
+            var game = new Game("ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 3, true);
 
             // Act
             game.AddPlayer(Guid.NewGuid(), "User1", "avatar.png", "conn-1");
@@ -397,7 +397,7 @@ namespace UnitTests.Domain
         public void AddPlayer_WhenFull_ShouldThrowInvalidOperationException()
         {
             // Arrange
-            var game = new Game("ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 1);
+            var game = new Game("ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 1, true);
             game.AddPlayer(Guid.NewGuid(), "User1", "avatar.png", "conn-1");
 
             // Act & Assert
@@ -409,7 +409,7 @@ namespace UnitTests.Domain
         #region Helper Methods
 
         private static Game CreateValidGame() =>
-            new Game("ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 4);
+            new Game("ABCDEFGHIJ", GameStatus.Creating, GameType.Private, 10, 4, true);
 
         private static (Guid userId, string pseudo, string avatar) CreateValidUserData() =>
             (Guid.NewGuid(), "TestUser", "avatar.png");

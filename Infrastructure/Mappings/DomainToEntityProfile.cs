@@ -42,15 +42,23 @@ namespace Infrastructure.Mappings
 
             CreateMap<Player, PlayerEntity>()
                 .ForMember(dest => dest.Game, opt => opt.Ignore());
+
+            CreateMap<Answer, AnswerEntity>()
+                .ForMember(dest => dest.Game, opt => opt.Ignore())
+                .ForMember(dest => dest.Question, opt => opt.Ignore())
+                .ForMember(dest => dest.Player, opt => opt.Ignore())
+                .ForMember(dest => dest.UserResponse, opt => opt.MapFrom(src => src.ResponseUser));
             
             CreateMap<Game, GameEntity>()
                 .ForMember(dest => dest.Players, opt => opt.Ignore())
                 .ForMember(dest => dest.Questions, opt => opt.Ignore())
                 .ForMember(dest => dest.TotalQuestion, opt => opt.MapFrom(src => src.Settings.TotalQuestion))
                 .ForMember(dest => dest.MaxPlayers, opt => opt.MapFrom(src => src.Settings.MaxPlayers))
+                .ForMember(dest => dest.HasReview, opt => opt.MapFrom(src => src.Settings.HasReview))
                 .ForMember(dest => dest.Categories, opt => opt.MapFrom(src =>
                     src.Settings.CategoryIds.Select(id => new GameCategoriesEntity { CategoryId = id }).ToList()));
 
+            
 
         }
 
