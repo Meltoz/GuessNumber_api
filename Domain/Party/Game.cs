@@ -75,7 +75,7 @@ public class Game
 
     public void NextQuestion()
     {
-        if (CurrentQuestion + 1 >= Settings.TotalQuestion)
+        if (CurrentQuestion + 1 > Settings.TotalQuestion)
             throw new InvalidOperationException();
         
         CurrentQuestion++;
