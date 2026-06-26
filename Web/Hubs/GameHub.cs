@@ -84,6 +84,13 @@ public class GameHub : Hub<IGameHubClient>
         // TODO :  seule réponse par joueur
         await _gameService.UserResponse(code, response, Context.ConnectionId);
     }
+
+    public async Task NextQuestion(string code)
+    {
+        var userId = Guid.Parse(Context.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        await _gameService.GetNextQuestion(code, userId);
+    }
     
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
